@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+{% block title %}Student Dashboard{% endblock %}
+{% block nav_title %}STUDENT PORTAL{% endblock %}
+
+{% block content %}
+{% set cards = [
+    {'href': '/student/register', 'icon': 'fa-plus-circle', 'label': 'Register for Classes'},
+    {'href': '/student/drop', 'icon': 'fa-minus-circle', 'label': 'Drop Classes'},
+    {'href': '/student/grades', 'icon': 'fa-star', 'label': 'My Grades'},
+    {'href': '/student/schedule', 'icon': 'fa-calendar-alt', 'label': 'My Schedule'},
+    {'href': '/student/advisor', 'icon': 'fa-chalkboard-teacher', 'label': 'My Advisor'},
+    {'href': '/student/profile', 'icon': 'fa-user-edit', 'label': 'My Profile'}
+] %}
+
+<div class="px-8 py-12">
+    <h2 class="text-3xl font-bold text-white">Welcome back, {{ session['first_name'] }}</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">Manage your courses and academic info below</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-8">
+    <div class="flex flex-col gap-4">
+        {% for card in cards %}
+        <a href="{{ card.href }}" class="glass-card rounded-2xl p-6 shadow-lg flex flex-col items-center gap-2">
+            <i class="fas {{ card.icon }} text-3xl text-white opacity-80"></i>
+            <span class="text-lg font-semibold text-white">{{ card.label }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+{% block title %}Instructor Dashboard{% endblock %}
+{% block nav_title %}INSTRUCTOR PORTAL{% endblock %}
+
+{% block content %}
+{% set cards = [
+    {'href': '/instructor/grades', 'icon': 'fa-pen', 'label': 'Submit Grades'},
+    {'href': '/instructor/sections', 'icon': 'fa-calendar-alt', 'label': 'My Sections'},
+    {'href': '/instructor/roster', 'icon': 'fa-list', 'label': 'Section Roster'},
+    {'href': '/instructor/advisees', 'icon': 'fa-user-graduate', 'label': 'My Advisees'},
+    {'href': '/instructor/prereqs', 'icon': 'fa-sitemap', 'label': 'Course Prerequisites'},
+    {'href': '/instructor/profile', 'icon': 'fa-user-edit', 'label': 'My Profile'}
+] %}
+
+<div class="px-8 py-12">
+    <h2 class="text-3xl font-bold text-white">Welcome back, {{ session['first_name'] }}</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">Manage your courses and students below</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-8">
+    <div class="flex flex-col gap-4">
+        {% for card in cards %}
+        <a href="{{ card.href }}" class="glass-card rounded-2xl p-6 shadow-lg flex flex-col items-center gap-2">
+            <i class="fas {{ card.icon }} text-3xl text-white opacity-80"></i>
+            <span class="text-lg font-semibold text-white">{{ card.label }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

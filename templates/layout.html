@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}KSU{% endblock %}</title>
+
+    <!-- Tailwind CSS (utility classes) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome (icons) -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+
+    <style>
+        /* Deep Ocean background gradient — applied to <body> */
+        /* linear-gradient(135deg, #000428, #004e92) */
+
+        /* Dashboard/nav cards — frosted glass panels */
+        .glass-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.2s ease;
+        }
+        .glass-card:hover {
+            background: rgba(255,255,255,0.05);
+            transform: translateY(-2px);
+        }
+
+        /* Form inputs — frosted glass style */
+        .glass-input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* Data tables — used on all list/CRUD pages */
+        .glass-table { width: 100%; border-collapse: collapse; }
+        .glass-table th { text-align: left; padding: 12px 16px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .glass-table td { padding: 14px 16px; font-size: 0.875rem; color: rgba(255,255,255,0.85); border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .glass-table tr:hover td { background: rgba(255,255,255,0.04); }
+    </style>
+</head>
+
+<!-- Deep Ocean gradient background -->
+<body style="background: linear-gradient(135deg, #001845, #002a5c);" class="min-h-screen">
+
+    <!-- Navbar — only shown when logged in -->
+    {% if session.get('user_id') %}
+    <nav style="background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1);"
+        class="px-6 py-4 flex items-center justify-between">
+
+        <!-- Portal title — overridden per role via block nav_title -->
+        <h1 class="text-lg font-bold text-white tracking-widest">{% block nav_title %}KSU{% endblock %}</h1>
+
+        <!-- User info + logout -->
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-white opacity-70">{{ session.get('first_name', '') }}</span>
+            <a href="/logout"
+                style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);"
+                class="text-sm text-white px-3 py-1 rounded hover:opacity-80">Logout</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Page content — filled in by each template -->
+    {% block content %}{% endblock %}
+
+</body>
+</html>
