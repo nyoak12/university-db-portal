@@ -8,7 +8,7 @@ Flask web app for a university database system. Role-based access for admin, ins
 
 ### 1. Clone the repo and navigate into the project
 ```bash
-cd flask-admin-demo
+cd university-db-portal
 ```
 
 ### 2. Create and activate the virtual environment
