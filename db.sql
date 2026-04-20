@@ -7131,9 +7131,9 @@ INSERT INTO transcript VALUES ('S00500', 'MU-101', '1', 'Intro. to Music', 3, 'M
 
 -- Test Logins
 INSERT INTO admin VALUES('A03','Test','Admin');
-INSERT INTO login VALUES('A03','admin',SHA2('password123',256),'admin');
+INSERT INTO login VALUES('A03','testadmin',SHA2('password123',256),'admin');
 
-INSERT INTO instructor VALUES ('I00029', 'Test', 'Instructor', 'Comp. Sci.', 60000)
+INSERT INTO instructor VALUES ('I00029', 'Test', 'Instructor', 'Comp. Sci.', 60000);
 INSERT INTO login VALUES ('I00029', 'testinstructor', SHA2('instructor123', 256), 'instructor');
 
 INSERT INTO student VALUES ('S00501', 'Test', 'Student', 'Comp. Sci.', 'I00029');
