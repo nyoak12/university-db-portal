@@ -30,7 +30,7 @@ mysql -u root < db.sql
 This creates the `ksu` schema, all tables, and all stored procedures.
 
 ### 5. Create config.py
-`config.py` is intentionally not in the repo (it contains your local DB credentials). Create it manually in `flask-admin-demo/`:
+`config.py` is intentionally not in the repo (it contains your local DB credentials). Create it manually in `university-db-portal/`:
 ```python
 import pymysql
 
@@ -80,7 +80,7 @@ INSERT INTO login VALUES('A03', 'testadmin', SHA2('password123', 256), 'admin');
 Routes are already defined for all pages below. Templates marked `[TODO]` still need to be created.
 
 ```
-flask-admin-demo/
+university-db-portal/
 ├── app.py                  # registers all blueprints, runs the app
 ├── config.py               # DB connection — NOT in repo, create your own (see setup step 5)
 ├── db.sql                  # DDL: schema, tables, stored procedures
