@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+{% block title %}Time Slots{% endblock %}
+{% block nav_title %}KSU ADMIN{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">Time Slots</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">All class time slots</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-12">
+    <div class="glass-card rounded-2xl shadow-lg overflow-hidden">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Time Slot ID</th>
+                    <th>Day</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in timeslots %}
+                <tr>
+                    <td>{{ slot['time_slot_id'] }}</td>
+                    <td>{{ slot['day'] }}</td>
+                    <td>{{ slot['start_time'] }}</td>
+                    <td>{{ slot['end_time'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
