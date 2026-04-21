@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+{% block title %}Sections{% endblock %}
+{% block nav_title %}KSU ADMIN{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">Sections</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">All course sections</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-12">
+    <div class="glass-card rounded-2xl shadow-lg overflow-hidden">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Course ID</th>
+                    <th>Section ID</th>
+                    <th>Semester</th>
+                    <th>Year</th>
+                    <th>Building</th>
+                    <th>Room</th>
+                    <th>Time Slot</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for section in sections %}
+                <tr>
+                    <td>{{ section['course_id'] }}</td>
+                    <td>{{ section['sec_id'] }}</td>
+                    <td>{{ section['semester'] }}</td>
+                    <td>{{ section['year'] }}</td>
+                    <td>{{ section['building_id'] or '—' }}</td>
+                    <td>{{ section['room_number'] or '—' }}</td>
+                    <td>{{ section['time_slot_id'] or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
