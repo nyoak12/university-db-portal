@@ -25,8 +25,8 @@ def drop():
         return redirect('/login')
     return render_template('student/drop.html')
 
-@student.route('/student/grades')
-def grades():
+@student.route('/student/transcript')
+def transcript():
     if student_required():
         return redirect('/login')
     db = config.get_db()
@@ -40,7 +40,7 @@ def grades():
     grade_list = [row['points'] for row in transcript if row['letter_grade'] not in ('W', 'I')]
     grade_average = sum(grade_list)/ len(grade_list) if grade_list else 0.0
 
-    return render_template('student/grades.html', transcript=transcript, grade_average=grade_average)
+    return render_template('student/transcript.html', transcript=transcript, grade_average=grade_average)
 
 @student.route('/student/schedule')
 def schedule():
