@@ -299,10 +299,14 @@ ALTER TABLE `takes`
 
 -- read all students in db (test page)
 DELIMITER $$
+DELIMITER //
 CREATE PROCEDURE get_all_students()
 BEGIN
-    SELECT * FROM student;
-END $$
+    SELECT s.ID, s.first_name, s.last_name, s.dept_name, s.advisor_id,
+        CONCAT(i.first_name, ' ', i.last_name) AS advisor_name
+    FROM student s
+    LEFT JOIN instructor i ON s.advisor_id = i.ID;
+END //
 DELIMITER ;
 
 -- Create student

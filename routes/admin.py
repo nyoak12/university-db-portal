@@ -14,6 +14,7 @@ def dashboard():
     return render_template('admin/dashboard.html')
 
 # ──────────────────Students──────────────────────────────────────────────────────────────────────────────────────────
+# Students
 @admin.route('/admin/students')
 def students():
     if admin_required():
@@ -23,8 +24,94 @@ def students():
     cursor.callproc('get_all_students')
     students = cursor.fetchall()
     cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_departments')
+    departments = cursor.fetchall()
+    cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_instructors')
+    instructors = cursor.fetchall()
+    cursor.close()
     db.close()
-    return render_template('admin/students.html', students=students)
+    return render_template('admin/students.html', students=students, departments=departments, instructors=instructors)
+
+# Create Student
+@admin.route('/admin/students/create', methods=['POST'])
+def create_student():
+    if admin_required():
+        return redirect('/login')
+    student_id = request.form['ID']
+    if not re.match(r'^S\d{5}$', student_id):
+        flash('Student ID must start with S followed by 5 digits (e.g. S00501).', 'error')
+        return redirect('/admin/students')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('create_student', [
+            student_id,
+            request.form['first_name'],
+            request.form['last_name'],
+            request.form['dept_name'] or None,
+            request.form['advisor_id'] or None,
+            request.form['username'],
+            request.form['password']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        if 'duplicate entry' in msg.lower():
+            flash('A student with this ID already exists.', 'error')
+        else:
+            flash(msg, 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/students')
+
+# Update Student
+@admin.route('/admin/students/update', methods=['POST'])
+def update_student():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_student', [
+            request.form['ID'],
+            request.form['first_name'],
+            request.form['last_name'],
+            request.form['dept_name'] or None,
+            request.form['advisor_id'] or None
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/students')
+
+# Delete Student
+@admin.route('/admin/students/delete', methods=['POST'])
+def delete_student():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('delete_student', [
+            request.form['ID']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/students')
 
 # ──────────────────Instructors──────────────────────────────────────────────────────────────────────────────────────────
 # Instructors
