@@ -680,7 +680,7 @@ BEGIN
     END IF;
 
     -- Archive graded enrollments to transcript before deletion
-    INSERT INTO transcript (ID, course_id, sec_id, title, credits, dept_name, semester, year, grade)
+    INSERT IGNORE INTO transcript (ID, course_id, sec_id, title, credits, dept_name, semester, year, grade)
     SELECT
         t.ID,
         t.course_id,
@@ -7461,7 +7461,8 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Time slot entry does not exist';
     END IF;
 
-    IF EXISTS (SELECT 1 FROM section WHERE time_slot_id = p_time_slot_id) THEN
+    IF (SELECT COUNT(*) FROM time_slot WHERE time_slot_id = p_time_slot_id) = 1
+       AND EXISTS (SELECT 1 FROM section WHERE time_slot_id = p_time_slot_id) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: time slot is assigned to a section';
     END IF;
 
@@ -7500,8 +7501,8 @@ DELIMITER //
 CREATE PROCEDURE get_all_timeslots()
 BEGIN
     SELECT time_slot_id, day,
-        TIME_FORMAT(start_time, '%H:%i') AS start_time,
-        TIME_FORMAT(end_time, '%H:%i') AS end_time
+        TIME_FORMAT(start_time, '%h:%i %p') AS start_time,
+        TIME_FORMAT(end_time, '%h:%i %p') AS end_time
     FROM time_slot
     ORDER BY time_slot_id, FIELD(day, 'M', 'T', 'W', 'R', 'F', 'S');
 END //

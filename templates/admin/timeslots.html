@@ -25,7 +25,7 @@
     <!-- Create Form -->
     <div class="glass-card rounded-2xl p-6 mb-6">
         <h3 class="text-white font-semibold mb-4">Add New Time Slot</h3>
-        <form action="/admin/timeslots/create" method="POST">
+        <form action="/admin/timeslots/create" method="POST" novalidate>
             <div class="flex gap-4">
                 <input type="text" name="time_slot_id" placeholder="ID (e.g. A)" required maxlength="4"
                     class="glass-input rounded-lg px-4 py-2 w-32">

@@ -1,11 +1,24 @@
 from flask import Blueprint, render_template, redirect, session, request, flash
 import config
 import re
+from datetime import datetime
 
 admin = Blueprint('admin', __name__)
 
 def admin_required():
     return session.get('role') != 'admin'
+
+def to_24hr(time_str):
+    if not time_str:
+        return time_str
+    try:
+        t = datetime.strptime(time_str, '%I:%M %p')
+    except ValueError:
+        try:
+            t = datetime.strptime(time_str, '%H:%M')
+        except ValueError:
+            return time_str
+    return t.strftime('%H:%M')
 
 @admin.route('/admin')
 def dashboard():
@@ -310,6 +323,7 @@ def delete_course():
     return redirect('/admin/courses')
 
 # ──────────────────Sections──────────────────────────────────────────────────────────────────────────────────────────
+# Sections
 @admin.route('/admin/sections')
 def sections():
     if admin_required():
@@ -319,8 +333,96 @@ def sections():
     cursor.callproc('get_all_sections')
     sections = cursor.fetchall()
     cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_courses')
+    courses = cursor.fetchall()
+    cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_classrooms')
+    classrooms = cursor.fetchall()
+    cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_timeslots')
+    timeslots = cursor.fetchall()
+    cursor.close()
     db.close()
-    return render_template('admin/sections.html', sections=sections)
+    return render_template('admin/sections.html', sections=sections, courses=courses, classrooms=classrooms, timeslots=timeslots)
+
+# Create Section
+@admin.route('/admin/sections/create', methods=['POST'])
+def create_section():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('create_section', [
+            request.form['course_id'],
+            request.form['sec_id'],
+            request.form['semester'],
+            request.form['year'],
+            request.form['building_id'] or None,
+            request.form['room_number'] or None,
+            request.form['time_slot_id'] or None
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        flash(msg, 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/sections')
+
+# Update Section
+@admin.route('/admin/sections/update', methods=['POST'])
+def update_section():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_section', [
+            request.form['course_id'],
+            request.form['sec_id'],
+            request.form['semester'],
+            request.form['year'],
+            request.form['building_id'] or None,
+            request.form['room_number'] or None,
+            request.form['time_slot_id'] or None
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/sections')
+
+# Delete Section
+@admin.route('/admin/sections/delete', methods=['POST'])
+def delete_section():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('delete_section', [
+            request.form['course_id'],
+            request.form['sec_id'],
+            request.form['semester'],
+            request.form['year']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/sections')
 
 # ──────────────────Departments──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/departments')
@@ -540,14 +642,16 @@ def timeslots():
 def create_timeslot():
     if admin_required():
         return redirect('/login')
+    print(request.form['start_time'])
+    print(request.form['end_time'])
     db = config.get_db()
     cursor = db.cursor()
     try:
         cursor.callproc('create_timeslot', [
             request.form['time_slot_id'].upper(),
             request.form['day'].upper(),
-            request.form['start_time'],
-            request.form['end_time']
+            to_24hr(request.form['start_time']),
+            to_24hr(request.form['end_time'])
         ])
         db.commit()
     except Exception as e:
@@ -569,8 +673,8 @@ def update_timeslot():
         cursor.callproc('update_timeslot', [
             request.form['time_slot_id'],
             request.form['day'],
-            request.form['start_time'],
-            request.form['end_time']
+            to_24hr(request.form['start_time']),
+            to_24hr(request.form['end_time'])
         ])
         db.commit()
     except Exception as e:

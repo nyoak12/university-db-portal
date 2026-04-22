@@ -6,37 +6,198 @@
 <div class="px-8 py-10">
     <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
     <h2 class="text-3xl font-bold text-white mt-4">Sections</h2>
-    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">All course sections</p>
+    <p class="text-white opacity-50 mt-1">All course sections</p>
 </div>
 
-<div class="max-w-5xl mx-auto px-8 pb-12">
-    <div class="glass-card rounded-2xl shadow-lg overflow-hidden">
-        <table class="glass-table">
-            <thead>
-                <tr>
-                    <th>Course ID</th>
-                    <th>Section ID</th>
-                    <th>Semester</th>
-                    <th>Year</th>
-                    <th>Building</th>
-                    <th>Room</th>
-                    <th>Time Slot</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for section in sections %}
-                <tr>
-                    <td>{{ section['course_id'] }}</td>
-                    <td>{{ section['sec_id'] }}</td>
-                    <td>{{ section['semester'] }}</td>
-                    <td>{{ section['year'] }}</td>
-                    <td>{{ section['building_id'] or '—' }}</td>
-                    <td>{{ section['room_number'] or '—' }}</td>
-                    <td>{{ section['time_slot_id'] or '—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="max-w-6xl mx-auto px-8 pb-12">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flex items-center gap-2 mb-4 text-red-400 text-sm">
+                    <span>⚠️ {{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Create Form -->
+    <div class="glass-card rounded-2xl p-6 mb-6">
+        <h3 class="text-white font-semibold mb-4">Add New Section</h3>
+        <form action="/admin/sections/create" method="POST" novalidate>
+            <div class="flex gap-4 flex-wrap">
+                <select name="course_id" required class="glass-input rounded-lg px-4 py-2 w-40">
+                    <option value="" disabled selected>-- Course --</option>
+                    {% for course in courses %}
+                        <option value="{{ course['course_id'] }}">{{ course['course_id'] }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="sec_id" placeholder="Section ID (e.g. 1)" required
+                    class="glass-input rounded-lg px-4 py-2 w-36">
+                <select name="semester" required class="glass-input rounded-lg px-4 py-2 w-36">
+                    <option value="" disabled selected>-- Semester --</option>
+                    <option value="Fall">Fall</option>
+                    <option value="Spring">Spring</option>
+                    <option value="Summer">Summer</option>
+                </select>
+                <input type="number" name="year" placeholder="Year" required min="2000" max="2099"
+                    class="glass-input rounded-lg px-4 py-2 w-28">
+                <select name="building_id" id="create_building" class="glass-input rounded-lg px-4 py-2 w-40"
+                    onchange="filterRooms('create_building', 'create_room')">
+                    <option value="">-- Building --</option>
+                    {% set seen_buildings = [] %}
+                    {% for room in classrooms %}
+                        {% if room['building_id'] not in seen_buildings %}
+                            <option value="{{ room['building_id'] }}">{{ room['building_id'] }}</option>
+                            {% set _ = seen_buildings.append(room['building_id']) %}
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <select name="room_number" id="create_room" class="glass-input rounded-lg px-4 py-2 w-28">
+                    <option value="">-- Room --</option>
+                    {% for room in classrooms %}
+                        <option value="{{ room['room_number'] }}" data-building="{{ room['building_id'] }}" style="display:none">{{ room['room_number'] }}</option>
+                    {% endfor %}
+                </select>
+                <select name="time_slot_id" class="glass-input rounded-lg px-4 py-2 w-36">
+                    <option value="">-- Time Slot --</option>
+                    {% set seen_slots = [] %}
+                    {% for slot in timeslots %}
+                        {% if slot['time_slot_id'] not in seen_slots %}
+                            <option value="{{ slot['time_slot_id'] }}">{{ slot['time_slot_id'] }}</option>
+                            {% set _ = seen_slots.append(slot['time_slot_id']) %}
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
+                    Add
+                </button>
+            </div>
+        </form>
     </div>
+
+<!-- Table -->
+<div class="glass-card rounded-2xl shadow-lg overflow-x-auto">
+    <table class="glass-table">
+        <thead>
+            <tr>
+                <th>Course ID</th>
+                <th>Section ID</th>
+                <th>Semester</th>
+                <th>Year</th>
+                <th>Building</th>
+                <th>Room</th>
+                <th>Time Slot</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for section in sections %}
+            <tr>
+                <td>{{ section['course_id'] }}</td>
+                <td>{{ section['sec_id'] }}</td>
+                <td>{{ section['semester'] }}</td>
+                <td>{{ section['year'] }}</td>
+                <td>{{ section['building_id'] }}</td>
+                <td>{{ section['room_number'] }}</td>
+                <td>{{ section['time_slot_id'] }}</td>
+                <td class="flex gap-2">
+                    <!-- Update Form -->
+                    <form action="/admin/sections/update" method="POST" class="flex gap-2" novalidate>
+                        <input type="hidden" name="course_id" value="{{ section['course_id'] }}">
+                        <input type="hidden" name="sec_id" value="{{ section['sec_id'] }}">
+                        <input type="hidden" name="semester" value="{{ section['semester'] }}">
+                        <input type="hidden" name="year" value="{{ section['year'] }}">
+                        <select name="building_id" id="building_{{ loop.index }}" class="glass-input rounded px-2 py-1 text-sm w-32"
+                            onchange="filterRooms('building_{{ loop.index }}', 'room_{{ loop.index }}')">
+                            <option value="">-- Building --</option>
+                            {% set seen_buildings = [] %}
+                            {% for room in classrooms %}
+                                {% if room['building_id'] not in seen_buildings %}
+                                    <option value="{{ room['building_id'] }}" {% if room['building_id'] == section['building_id'] %}selected{% endif %}>{{ room['building_id'] }}</option>
+                                    {% set _ = seen_buildings.append(room['building_id']) %}
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <select name="room_number" id="room_{{ loop.index }}" class="glass-input rounded px-2 py-1 text-sm w-24" data-current="{{ section['room_number'] }}">
+                            <option value="">-- Room --</option>
+                        </select>
+                        <select name="time_slot_id" class="glass-input rounded px-2 py-1 text-sm w-32">
+                            <option value="">-- Slot --</option>
+                            {% set seen_slots = [] %}
+                            {% for slot in timeslots %}
+                                {% if slot['time_slot_id'] not in seen_slots %}
+                                    <option value="{{ slot['time_slot_id'] }}" {% if slot['time_slot_id'] == section['time_slot_id'] %}selected{% endif %}>{{ slot['time_slot_id'] }}</option>
+                                    {% set _ = seen_slots.append(slot['time_slot_id']) %}
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <button type="submit"
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">
+                            Update
+                        </button>
+                    </form>
+                    <!-- Delete Form -->
+                    <form action="/admin/sections/delete" method="POST">
+                        <input type="hidden" name="course_id" value="{{ section['course_id'] }}">
+                        <input type="hidden" name="sec_id" value="{{ section['sec_id'] }}">
+                        <input type="hidden" name="semester" value="{{ section['semester'] }}">
+                        <input type="hidden" name="year" value="{{ section['year'] }}">
+                        <button type="submit"
+                            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+
+<script>
+    // Store all classroom data from the server as a JS array
+    const classrooms = {{ classrooms | tojson }};
+
+    // Rebuilds the room dropdown based on the selected building
+    // keepValue lets us pre-select the current room when the page loads
+    function filterRooms(buildingSelectId, roomSelectId, keepValue = null) {
+        const building = document.getElementById(buildingSelectId).value;
+        const roomSelect = document.getElementById(roomSelectId);
+
+        // Reset the dropdown to just the placeholder
+        roomSelect.innerHTML = '<option value="">-- Room --</option>';
+
+        // If no building is selected, leave the room dropdown empty
+        if (!building) return;
+
+        // Filter classrooms to match selected building
+        const rooms = classrooms.filter(r => r.building_id === building);
+
+        // Add each matching room as an option
+        rooms.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.room_number;
+            opt.textContent = r.room_number;
+            // If we have a current value to restore, select it
+            if (keepValue && String(r.room_number) === String(keepValue)) opt.selected = true;
+            roomSelect.appendChild(opt);
+        });
+    }
+
+    // When the page finishes loading, pre-filter rooms
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[id^="building_"]').forEach(select => {
+            const index = select.id.split('_')[1];
+            const roomSelect = document.getElementById('room_' + index);
+            if (roomSelect) {
+                // Read the current room value stored in data-current
+                const currentRoom = roomSelect.dataset.current;
+                filterRooms(select.id, 'room_' + index, currentRoom);
+            }
+        });
+    });
+</script>
+
 {% endblock %}
