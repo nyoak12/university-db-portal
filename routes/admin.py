@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, session
+from flask import Blueprint, render_template, redirect, session, request, flash
 import config
 
 admin = Blueprint('admin', __name__)
@@ -11,6 +11,8 @@ def dashboard():
     if admin_required():
         return redirect('/login')
     return render_template('admin/dashboard.html')
+
+# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 # Students
 @admin.route('/admin/students')
@@ -25,6 +27,8 @@ def students():
     db.close()
     return render_template('admin/students.html', students=students)
 
+# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 # Instructors
 @admin.route('/admin/instructors')
 def instructors():
@@ -37,6 +41,8 @@ def instructors():
     cursor.close()
     db.close()
     return render_template('admin/instructors.html', instructors=instructors)
+
+# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 # Courses
 @admin.route('/admin/courses')
@@ -51,6 +57,8 @@ def courses():
     db.close()
     return render_template('admin/courses.html', courses=courses)
 
+# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 # Sections
 @admin.route('/admin/sections')
 def sections():
@@ -64,6 +72,8 @@ def sections():
     db.close()
     return render_template('admin/sections.html', sections=sections)
 
+# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 # Departments
 @admin.route('/admin/departments')
 def departments():
@@ -73,9 +83,86 @@ def departments():
     cursor = db.cursor()
     cursor.callproc('get_all_departments')
     departments = cursor.fetchall()
+    cursor.nextset()
+    cursor.callproc('get_all_buildings')
+    buildings = cursor.fetchall()
     cursor.close()
     db.close()
-    return render_template('admin/departments.html', departments=departments)
+    return render_template('admin/departments.html', departments=departments, buildings=buildings)
+
+# Create Departments
+@admin.route('/admin/departments/create', methods=['POST'])
+def create_department():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('create_department', [
+            request.form['dept_name'],
+            request.form['building_id'],
+            request.form['budget']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        if 'out of range' in msg.lower():
+            flash('Budget value is too large. Please enter a realistic amount.', 'error')
+        else:
+            flash(msg, 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/departments')
+
+# Update Departments
+@admin.route('/admin/departments/update', methods=['POST'])
+def update_department():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_department', [
+            request.form['dept_name'],
+            request.form['building_id'],
+            request.form['budget']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        if 'out of range' in msg.lower():
+            flash('Budget value is too large. Please enter a realistic amount.', 'error')
+        else:
+            flash(msg, 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/departments')
+
+# Delete Departments
+@admin.route('/admin/departments/delete', methods=['POST'])
+def delete_department():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('delete_department', [
+            request.form['dept_name'],
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/departments')
+
+# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 # Classrooms
 @admin.route('/admin/classrooms')
@@ -89,6 +176,8 @@ def classrooms():
     cursor.close()
     db.close()
     return render_template('admin/classrooms.html', classrooms=classrooms)
+
+# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 # Time Slots
 @admin.route('/admin/timeslots')
