@@ -7256,6 +7256,7 @@ BEGIN
 END //
 DELIMITER ;
 
+---------------------------Department Stuff-------------------------------------------------
 -- Create department (Admin)
 DELIMITER //
 CREATE PROCEDURE create_department(
@@ -7266,6 +7267,10 @@ CREATE PROCEDURE create_department(
 BEGIN
     IF p_dept_name IN (SELECT dept_name FROM department) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department already exists';
+    END IF;
+
+    IF p_building_id IS NOT NULL AND p_building_id NOT IN (SELECT building_id FROM building) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Building does not exist';
     END IF;
 
     INSERT INTO department (dept_name, building_id, budget)
@@ -7313,3 +7318,65 @@ BEGIN
     DELETE FROM department WHERE dept_name = p_dept_name;
 END //
 DELIMITER ;
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+---------------------------Classroom Stuff-------------------------------------------------
+-- Create classroom (Admin)
+DELIMITER //
+CREATE PROCEDURE create_classroom(
+    IN p_building_id VARCHAR(15),
+    IN p_room_number VARCHAR(7),
+    IN p_capacity NUMERIC(4,0)
+)
+BEGIN
+    IF EXISTS (SELECT 1 FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Classroom already exists';
+    END IF;
+
+    IF p_building_id NOT IN (SELECT building_id FROM building) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Building does not exist';
+    END IF;
+
+    INSERT INTO classroom (building_id, room_number, capacity)
+    VALUES (p_building_id, p_room_number, p_capacity);
+END //
+DELIMITER ;
+
+-- Update classroom (Admin)
+DELIMITER //
+CREATE PROCEDURE update_classroom(
+    IN p_building_id VARCHAR(15),
+    IN p_room_number VARCHAR(7),
+    IN p_capacity NUMERIC(4,0)
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Classroom does not exist';
+    END IF;
+
+    UPDATE classroom
+    SET capacity = p_capacity
+    WHERE building_id = p_building_id AND room_number = p_room_number;
+END //
+DELIMITER ;
+
+-- Delete classroom (Admin)
+DELIMITER //
+CREATE PROCEDURE delete_classroom(
+    IN p_building_id VARCHAR(15),
+    IN p_room_number VARCHAR(7)
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Classroom does not exist';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM section WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: classroom is assigned to a section';
+    END IF;
+
+    DELETE FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number;
+END //
+DELIMITER ;
+

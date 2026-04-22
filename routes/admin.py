@@ -100,8 +100,8 @@ def create_department():
     try:
         cursor.callproc('create_department', [
             request.form['dept_name'],
-            request.form['building_id'],
-            request.form['budget']
+            request.form['building_id'] or None,
+            request.form['budget'] or None
         ])
         db.commit()
     except Exception as e:
@@ -109,6 +109,8 @@ def create_department():
         msg = e.args[1] if len(e.args) > 1 else str(e)
         if 'out of range' in msg.lower():
             flash('Budget value is too large. Please enter a realistic amount.', 'error')
+        elif 'foreign key' in msg.lower():
+            flash('Please select a valid building from the list.', 'error')
         else:
             flash(msg, 'error')
     finally:
@@ -126,8 +128,8 @@ def update_department():
     try:
         cursor.callproc('update_department', [
             request.form['dept_name'],
-            request.form['building_id'],
-            request.form['budget']
+            request.form['building_id'] or None,
+            request.form['budget'] or None
         ])
         db.commit()
     except Exception as e:
@@ -173,9 +175,77 @@ def classrooms():
     cursor = db.cursor()
     cursor.callproc('get_all_classrooms')
     classrooms = cursor.fetchall()
+    cursor.nextset()
+    cursor.callproc('get_all_buildings')
+    buildings = cursor.fetchall()
     cursor.close()
     db.close()
-    return render_template('admin/classrooms.html', classrooms=classrooms)
+    return render_template('admin/classrooms.html', classrooms=classrooms, buildings=buildings)
+
+# Create Classroom
+@admin.route('/admin/classrooms/create', methods=['POST'])
+def create_classroom():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('create_classroom', [
+            request.form['building_id'],
+            request.form['room_number'],
+            request.form['capacity']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/classrooms')
+
+# Update Classroom
+@admin.route('/admin/classrooms/update', methods=['POST'])
+def update_classroom():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_classroom', [
+            request.form['building_id'],
+            request.form['room_number'],
+            request.form['capacity']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/classrooms')
+
+# Delete Classroom
+@admin.route('/admin/classrooms/delete', methods=['POST'])
+def delete_classroom():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('delete_classroom', [
+            request.form['building_id'],
+            request.form['room_number']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/classrooms')
 
 # ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
