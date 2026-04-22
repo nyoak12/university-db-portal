@@ -7186,3 +7186,64 @@ INSERT INTO login VALUES ('I00029', 'testinstructor', SHA2('instructor123', 256)
 
 INSERT INTO student VALUES ('S00501', 'Test', 'Student', 'Comp. Sci.', 'I00029');
 INSERT INTO login VALUES ('S00501', 'teststudent', SHA2('student123', 256), 'student');
+
+-- update student with username gholmes and bjackson so i can test schedule page and transcript
+UPDATE login SET password = SHA2('test123', 256) WHERE user_id = 'S00004';
+
+UPDATE login SET password = SHA2('test123', 256) WHERE user_id = 'S00054';
+
+
+-- read student transcript return all fields where there is valid grades
+DELIMITER //
+CREATE PROCEDURE read_student_transcript(IN student_id VARCHAR(6))
+BEGIN
+    SELECT * FROM transcript
+        JOIN grade_value ON transcript.grade = grade_value.letter_grade
+    WHERE transcript.ID = student_id
+    ORDER BY year DESC, semester;
+END //
+DELIMITER ;
+
+-- Student schedule: returns current and past schedule for jinja to filter for display
+DELIMITER //
+CREATE PROCEDURE get_student_schedule(IN student_id VARCHAR(6))
+BEGIN
+    SELECT 
+        takes.course_id,
+        takes.sec_id,
+        takes.semester,
+        takes.year,
+        takes.grade, 
+        course.title,
+        course.credits,
+        classroom.building_id,
+        classroom.room_number,
+        GROUP_CONCAT(time_slot.day ORDER BY time_slot.day) AS days,
+        MIN(time_slot.start_time) AS start_time,
+        MIN(time_slot.end_time) AS end_time
+
+    from takes 
+    JOIN section ON takes.sec_id = section.sec_id 
+        AND takes.course_id = section.course_id 
+        AND takes.semester = section.semester 
+        AND takes.year = section.year
+
+    JOIN course ON section.course_id = course.course_id
+    JOIN time_slot ON section.time_slot_id = time_slot.time_slot_id
+    JOIN classroom ON section.building_id = classroom.building_id 
+        AND section.room_number = classroom.room_number
+
+    where takes.ID = student_id
+
+    GROUP BY 
+        takes.course_id, 
+        takes.sec_id,
+        takes.semester,
+        takes.year,
+        takes.grade,
+        course.title,
+        course.credits,
+        classroom.building_id,
+        classroom.room_number;
+END //
+DELIMITER ;
