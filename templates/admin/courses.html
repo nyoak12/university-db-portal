@@ -9,7 +9,45 @@
     <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">All university courses</p>
 </div>
 
-<div class="max-w-5xl mx-auto px-8 pb-12">
+<div class="max-w-6xl mx-auto px-8 pb-12">
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flex items-center gap-2 mb-4 text-red-400 text-sm">
+                    <span>⚠️ {{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Create Form -->
+    <div class="glass-card rounded-2xl p-6 mb-6">
+        <h3 class="text-white font-semibold mb-4">Add New Course</h3>
+        <form action="/admin/courses/create" method="POST">
+            <div class="flex gap-4">
+                <input type="text" name="course_id" placeholder="e.g. CS-347" required maxlength="8"
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
+                <input type="text" name="title" placeholder="Title" required maxlength="50"
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
+                <select name="dept_name" class="glass-input rounded-lg px-4 py-2 flex-1">
+                    <option value="">-- Select Department --</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept['dept_name'] }}">{{ dept['dept_name'] }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" name="credits" placeholder="Credits" min="1" max="6" required
+                    class="glass-input rounded-lg px-4 py-2 w-24">
+                <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
+                    Add
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Courses Table -->
     <div class="glass-card rounded-2xl shadow-lg overflow-hidden">
         <table class="glass-table">
             <thead>
@@ -18,6 +56,7 @@
                     <th>Title</th>
                     <th>Department</th>
                     <th>Credits</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -26,7 +65,43 @@
                     <td>{{ course['course_id'] }}</td>
                     <td>{{ course['title'] }}</td>
                     <td>{{ course['dept_name'] or '—' }}</td>
-                    <td>{{ course['credits'] }}</td>
+                    <td>{{ course['credits'] or '—' }}</td>
+                    <td class="flex gap-2">
+
+                        <!-- Update Form -->
+                        <form action="/admin/courses/update" method="POST" class="flex gap-2">
+                            <input type="hidden" name="course_id" value="{{ course['course_id'] }}">
+                            <input type="text" name="title" placeholder="Title"
+                                value="{{ course['title'] or '' }}" maxlength="50"
+                                class="glass-input rounded px-2 py-1 text-sm w-32">
+                            <select name="dept_name" class="glass-input rounded px-2 py-1 text-sm">
+                                <option value="">-- Dept --</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept['dept_name'] }}"
+                                    {% if dept['dept_name'] == course['dept_name'] %}selected{% endif %}>
+                                    {{ dept['dept_name'] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="number" name="credits" placeholder="Credits" min="1" max="6" required
+                                value="{{ course['credits'] or '' }}"
+                                class="glass-input rounded px-2 py-1 text-sm w-20">
+                            <button type="submit"
+                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">
+                                Update
+                            </button>
+                        </form>
+
+                        <!-- Delete Form -->
+                        <form action="/admin/courses/delete" method="POST">
+                            <input type="hidden" name="course_id" value="{{ course['course_id'] }}">
+                            <button type="submit"
+                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                Delete
+                            </button>
+                        </form>
+
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

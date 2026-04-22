@@ -299,10 +299,14 @@ ALTER TABLE `takes`
 
 -- read all students in db (test page)
 DELIMITER $$
+DELIMITER //
 CREATE PROCEDURE get_all_students()
 BEGIN
-    SELECT * FROM student;
-END $$
+    SELECT s.ID, s.first_name, s.last_name, s.dept_name, s.advisor_id,
+        CONCAT(i.first_name, ' ', i.last_name) AS advisor_name
+    FROM student s
+    LEFT JOIN instructor i ON s.advisor_id = i.ID;
+END //
 DELIMITER ;
 
 -- Create student
@@ -679,7 +683,7 @@ BEGIN
     END IF;
 
     -- Archive graded enrollments to transcript before deletion
-    INSERT INTO transcript (ID, course_id, sec_id, title, credits, dept_name, semester, year, grade)
+    INSERT IGNORE INTO transcript (ID, course_id, sec_id, title, credits, dept_name, semester, year, grade)
     SELECT
         t.ID,
         t.course_id,
@@ -1019,6 +1023,14 @@ DELIMITER //
 CREATE PROCEDURE get_all_timeslots()
 BEGIN
     SELECT * FROM time_slot;
+END //
+DELIMITER ;
+
+-- Get all buildings
+DELIMITER //
+CREATE PROCEDURE get_all_buildings()
+BEGIN
+    SELECT * FROM building;
 END //
 DELIMITER ;
 
@@ -7362,3 +7374,250 @@ INSERT INTO section VALUES ('PHY-101', '1', 'Fall', 2026, 'Smith', '201', 'B');
 INSERT INTO section VALUES ('PHY-201', '1', 'Fall', 2026, 'Merrill', '301', 'G');
 INSERT INTO section VALUES ('PHY-301', '1', 'Fall', 2026, 'Satterfield', '301', 'B');
 INSERT INTO section VALUES ('PHY-315', '1', 'Fall', 2026, 'Smith', '401', 'A');
+-- Department CRUD
+-- Create department (Admin)
+DELIMITER //
+CREATE PROCEDURE create_department(
+    IN p_dept_name VARCHAR(20),
+    IN p_building_id VARCHAR(15),
+    IN p_budget NUMERIC(12,2)
+)
+BEGIN
+    IF p_dept_name IN (SELECT dept_name FROM department) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department already exists';
+    END IF;
+
+    IF p_building_id IS NOT NULL AND p_building_id NOT IN (SELECT building_id FROM building) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Building does not exist';
+    END IF;
+
+    INSERT INTO department (dept_name, building_id, budget)
+    VALUES (p_dept_name, p_building_id, p_budget);
+END //
+DELIMITER ;
+
+-- Update department (Admin)
+DELIMITER //
+CREATE PROCEDURE update_department(
+    IN p_dept_name VARCHAR(20),
+    IN p_building_id VARCHAR(15),
+    IN p_budget NUMERIC(12,2)
+)
+BEGIN
+    IF p_dept_name NOT IN (SELECT dept_name FROM department) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department does not exist';
+    END IF;
+
+    UPDATE department
+    SET building_id = p_building_id,
+        budget = p_budget
+    WHERE dept_name = p_dept_name;
+END //
+DELIMITER ;
+
+-- Delete department (Admin)
+DELIMITER //
+CREATE PROCEDURE delete_department(
+    IN p_dept_name VARCHAR(20)
+)
+BEGIN
+    IF p_dept_name NOT IN (SELECT dept_name FROM department) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department does not exist';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM instructor WHERE dept_name = p_dept_name) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: instructors exist in this department';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM student WHERE dept_name = p_dept_name) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: students exist in this department';
+    END IF;
+
+    DELETE FROM department WHERE dept_name = p_dept_name;
+END //
+DELIMITER ;
+
+-- Classroom CRUD
+-- Create classroom (Admin)
+DELIMITER //
+CREATE PROCEDURE create_classroom(
+    IN p_building_id VARCHAR(15),
+    IN p_room_number VARCHAR(7),
+    IN p_capacity NUMERIC(4,0)
+)
+BEGIN
+    IF EXISTS (SELECT 1 FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Classroom already exists';
+    END IF;
+
+    IF p_building_id NOT IN (SELECT building_id FROM building) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Building does not exist';
+    END IF;
+
+    INSERT INTO classroom (building_id, room_number, capacity)
+    VALUES (p_building_id, p_room_number, p_capacity);
+END //
+DELIMITER ;
+
+-- Update classroom (Admin)
+DELIMITER //
+CREATE PROCEDURE update_classroom(
+    IN p_building_id VARCHAR(15),
+    IN p_room_number VARCHAR(7),
+    IN p_capacity NUMERIC(4,0)
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Classroom does not exist';
+    END IF;
+
+    UPDATE classroom
+    SET capacity = p_capacity
+    WHERE building_id = p_building_id AND room_number = p_room_number;
+END //
+DELIMITER ;
+
+-- Delete classroom (Admin)
+DELIMITER //
+CREATE PROCEDURE delete_classroom(
+    IN p_building_id VARCHAR(15),
+    IN p_room_number VARCHAR(7)
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Classroom does not exist';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM section WHERE building_id = p_building_id AND room_number = p_room_number) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: classroom is assigned to a section';
+    END IF;
+
+    DELETE FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number;
+END //
+DELIMITER ;
+
+-- Course CRUD
+-- Update course (Admin)
+DELIMITER //
+CREATE PROCEDURE update_course(
+    IN p_course_id VARCHAR(8),
+    IN p_title VARCHAR(50),
+    IN p_dept_name VARCHAR(20),
+    IN p_credits NUMERIC(2,0)
+)
+BEGIN
+    IF p_course_id NOT IN (SELECT course_id FROM course) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Course does not exist';
+    END IF;
+
+    IF p_dept_name IS NOT NULL AND p_dept_name NOT IN (SELECT dept_name FROM department) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department does not exist';
+    END IF;
+
+    UPDATE course
+    SET title = p_title,
+        dept_name = p_dept_name,
+        credits = p_credits
+    WHERE course_id = p_course_id;
+END //
+DELIMITER ;
+
+-- Delete course (Admin)
+DELIMITER //
+CREATE PROCEDURE delete_course(
+    IN p_course_id VARCHAR(8)
+)
+BEGIN
+    IF p_course_id NOT IN (SELECT course_id FROM course) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Course does not exist';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM section WHERE course_id = p_course_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: course has existing sections';
+    END IF;
+
+    DELETE FROM prereq WHERE course_id = p_course_id OR prereq_id = p_course_id;
+    DELETE FROM course WHERE course_id = p_course_id;
+END //
+DELIMITER ;
+
+-- Timeslot CRUD
+-- Create Timeslot (Admin)
+DELIMITER //
+CREATE PROCEDURE create_timeslot(
+    IN p_time_slot_id VARCHAR(4),
+    IN p_day VARCHAR(1),
+    IN p_start_time TIME,
+    IN p_end_time TIME
+)
+BEGIN
+    IF p_time_slot_id NOT IN (SELECT time_slot_id FROM time_slot_pattern) THEN
+        INSERT INTO time_slot_pattern (time_slot_id) VALUES (p_time_slot_id);
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'This time slot already has an entry for that day';
+    END IF;
+
+    INSERT INTO time_slot (time_slot_id, day, start_time, end_time)
+    VALUES (p_time_slot_id, p_day, p_start_time, p_end_time);
+END //
+DELIMITER ;
+
+-- Delete Timeslot (Admin)
+DELIMITER //
+CREATE PROCEDURE delete_timeslot(
+    IN p_time_slot_id VARCHAR(4),
+    IN p_day VARCHAR(1)
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Time slot entry does not exist';
+    END IF;
+
+    IF (SELECT COUNT(*) FROM time_slot WHERE time_slot_id = p_time_slot_id) = 1
+       AND EXISTS (SELECT 1 FROM section WHERE time_slot_id = p_time_slot_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: time slot is assigned to a section';
+    END IF;
+
+    DELETE FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day;
+
+    IF NOT EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id) THEN
+        DELETE FROM time_slot_pattern WHERE time_slot_id = p_time_slot_id;
+    END IF;
+END //
+DELIMITER ;
+
+-- Update Timeslot (Admin)
+DELIMITER //
+CREATE PROCEDURE update_timeslot(
+    IN p_time_slot_id VARCHAR(4),
+    IN p_day VARCHAR(1),
+    IN p_start_time TIME,
+    IN p_end_time TIME
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Time slot entry does not exist';
+    END IF;
+
+    UPDATE time_slot
+    SET start_time = p_start_time,
+        end_time = p_end_time
+    WHERE time_slot_id = p_time_slot_id AND day = p_day;
+END //
+DELIMITER ;
+
+-- Get all time slots with formatted times and ordered by day
+DROP PROCEDURE IF EXISTS get_all_timeslots;
+
+DELIMITER //
+CREATE PROCEDURE get_all_timeslots()
+BEGIN
+    SELECT time_slot_id, day,
+        TIME_FORMAT(start_time, '%h:%i %p') AS start_time,
+        TIME_FORMAT(end_time, '%h:%i %p') AS end_time
+    FROM time_slot
+    ORDER BY time_slot_id, FIELD(day, 'M', 'T', 'W', 'R', 'F', 'S');
+END //
+DELIMITER ;
