@@ -27,6 +27,7 @@ def students():
     return render_template('admin/students.html', students=students)
 
 # ──────────────────Instructors──────────────────────────────────────────────────────────────────────────────────────────
+# Instructors
 @admin.route('/admin/instructors')
 def instructors():
     if admin_required():
@@ -36,8 +37,94 @@ def instructors():
     cursor.callproc('get_all_instructors')
     instructors = cursor.fetchall()
     cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_departments')
+    departments = cursor.fetchall()
+    cursor.close()
     db.close()
-    return render_template('admin/instructors.html', instructors=instructors)
+    return render_template('admin/instructors.html', instructors=instructors, departments=departments)
+
+# Create Instructor
+@admin.route('/admin/instructors/create', methods=['POST'])
+def create_instructor():
+    if admin_required():
+        return redirect('/login')
+    instructor_id = request.form['ID']
+    if not re.match(r'^I\d{5}$', instructor_id):
+        flash('Instructor ID must start with I followed by 5 digits (e.g. I00030).', 'error')
+        return redirect('/admin/instructors')
+    salary = request.form['salary'] or None
+    if salary and float(salary) <= 29000:
+        flash('Salary must be greater than $29,000.', 'error')
+        return redirect('/admin/instructors')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('create_instructor', [
+            instructor_id,
+            request.form['first_name'],
+            request.form['last_name'],
+            request.form['dept_name'] or None,
+            salary,
+            request.form['username'],
+            request.form['password']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/instructors')
+
+# Update Instructor
+@admin.route('/admin/instructors/update', methods=['POST'])
+def update_instructor():
+    if admin_required():
+        return redirect('/login')
+    salary = request.form['salary'] or None
+    if salary and float(salary) <= 29000:
+        flash('Salary must be greater than $29,000.', 'error')
+        return redirect('/admin/instructors')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_instructor', [
+            request.form['ID'],
+            request.form['first_name'],
+            request.form['last_name'],
+            request.form['dept_name'] or None,
+            salary
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/instructors')
+
+# Delete Instructor
+@admin.route('/admin/instructors/delete', methods=['POST'])
+def delete_instructor():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('delete_instructor', [
+            request.form['ID']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/instructors')
 
 # ──────────────────Courses──────────────────────────────────────────────────────────────────────────────────────────
 # Courses
