@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, session, request, flash
 import config
+import re
 
 admin = Blueprint('admin', __name__)
 
@@ -61,6 +62,10 @@ def courses():
 def create_course():
     if admin_required():
         return redirect('/login')
+    course_id = request.form['course_id']
+    if not re.match(r'^[A-Z]{2,4}-\d{3,4}$', course_id):
+        flash('Course ID must follow the format: XXX-000 (e.g. CS-347, BIO-101)', 'error')
+        return redirect('/admin/courses')
     credits = request.form['credits'] or None
     if credits and (int(credits) < 1 or int(credits) > 6):
         flash('Credits must be between 1 and 6.', 'error')
@@ -69,7 +74,7 @@ def create_course():
     cursor = db.cursor()
     try:
         cursor.callproc('create_course', [
-            request.form['course_id'],
+            course_id,
             request.form['title'],
             request.form['dept_name'] or None,
             credits
