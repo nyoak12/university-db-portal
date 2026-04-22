@@ -7256,7 +7256,7 @@ BEGIN
 END //
 DELIMITER ;
 
----------------------------Department Stuff-------------------------------------------------
+---------------------------Department CRUD-------------------------------------------------
 -- Create department (Admin)
 DELIMITER //
 CREATE PROCEDURE create_department(
@@ -7319,9 +7319,7 @@ BEGIN
 END //
 DELIMITER ;
 
----------------------------------------------------------------------------------------------------------------------------------------------------
-
----------------------------Classroom Stuff-------------------------------------------------
+---------------------------Classroom CRUD-------------------------------------------------
 -- Create classroom (Admin)
 DELIMITER //
 CREATE PROCEDURE create_classroom(
@@ -7377,6 +7375,51 @@ BEGIN
     END IF;
 
     DELETE FROM classroom WHERE building_id = p_building_id AND room_number = p_room_number;
+END //
+DELIMITER ;
+
+---------------------------Course CRUD-------------------------------------------------
+-- Update course (Admin)
+DELIMITER //
+CREATE PROCEDURE update_course(
+    IN p_course_id VARCHAR(8),
+    IN p_title VARCHAR(50),
+    IN p_dept_name VARCHAR(20),
+    IN p_credits NUMERIC(2,0)
+)
+BEGIN
+    IF p_course_id NOT IN (SELECT course_id FROM course) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Course does not exist';
+    END IF;
+
+    IF p_dept_name IS NOT NULL AND p_dept_name NOT IN (SELECT dept_name FROM department) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Department does not exist';
+    END IF;
+
+    UPDATE course
+    SET title = p_title,
+        dept_name = p_dept_name,
+        credits = p_credits
+    WHERE course_id = p_course_id;
+END //
+DELIMITER ;
+
+-- Delete course (Admin)
+DELIMITER //
+CREATE PROCEDURE delete_course(
+    IN p_course_id VARCHAR(8)
+)
+BEGIN
+    IF p_course_id NOT IN (SELECT course_id FROM course) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Course does not exist';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM section WHERE course_id = p_course_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: course has existing sections';
+    END IF;
+
+    DELETE FROM prereq WHERE course_id = p_course_id OR prereq_id = p_course_id;
+    DELETE FROM course WHERE course_id = p_course_id;
 END //
 DELIMITER ;
 

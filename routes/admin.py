@@ -39,6 +39,7 @@ def instructors():
     return render_template('admin/instructors.html', instructors=instructors)
 
 # ──────────────────Courses──────────────────────────────────────────────────────────────────────────────────────────
+# Courses
 @admin.route('/admin/courses')
 def courses():
     if admin_required():
@@ -48,8 +49,86 @@ def courses():
     cursor.callproc('get_all_courses')
     courses = cursor.fetchall()
     cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_departments')
+    departments = cursor.fetchall()
+    cursor.close()
     db.close()
-    return render_template('admin/courses.html', courses=courses)
+    return render_template('admin/courses.html', courses=courses, departments=departments)
+
+# Create Course
+@admin.route('/admin/courses/create', methods=['POST'])
+def create_course():
+    if admin_required():
+        return redirect('/login')
+    credits = request.form['credits'] or None
+    if credits and (int(credits) < 1 or int(credits) > 6):
+        flash('Credits must be between 1 and 6.', 'error')
+        return redirect('/admin/courses')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('create_course', [
+            request.form['course_id'],
+            request.form['title'],
+            request.form['dept_name'] or None,
+            credits
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/courses')
+
+# Update Course
+@admin.route('/admin/courses/update', methods=['POST'])
+def update_course():
+    if admin_required():
+        return redirect('/login')
+    credits = request.form['credits'] or None
+    if credits and (int(credits) < 1 or int(credits) > 6):
+        flash('Credits must be between 1 and 6.', 'error')
+        return redirect('/admin/courses')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_course', [
+            request.form['course_id'],
+            request.form['title'],
+            request.form['dept_name'] or None,
+            credits
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/courses')
+
+# Delete Course
+@admin.route('/admin/courses/delete', methods=['POST'])
+def delete_course():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('delete_course', [
+            request.form['course_id']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/courses')
 
 # ──────────────────Sections──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/sections')
