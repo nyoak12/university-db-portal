@@ -354,6 +354,7 @@ BEGIN
         s.first_name,
         s.last_name,
         s.dept_name,
+        s.advisor_id,
         CONCAT(i.first_name, ' ', i.last_name) AS advisor_name
     FROM student s
     LEFT JOIN instructor i ON s.advisor_id = i.ID
@@ -472,8 +473,10 @@ BEGIN
         i.first_name,
         i.last_name,
         i.dept_name,
-        i.salary
+        i.salary,
+        login.username
     FROM instructor i
+    JOIN login ON login.user_id = i.ID    
     WHERE i.ID = p_id;
 END //
 DELIMITER ;
@@ -7247,3 +7250,115 @@ BEGIN
         classroom.room_number;
 END //
 DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE get_sections_by_term(IN semester VARCHAR(6), IN year NUMERIC(4,0))
+BEGIN
+    SELECT 
+        section.course_id, course.title,
+        course.dept_name, course.credits, 
+        section.sec_id, section.semester, 
+        section.year, section.building_id, 
+        section.room_number, 
+        COUNT(takes.ID) as enrolled_students,
+        classroom.capacity,
+        GROUP_CONCAT(time_slot.day ORDER BY time_slot.day) as days, 
+        MIN(time_slot.start_time) as start_time, MIN(time_slot.end_time) as end_time
+        FROM section
+        JOIN course ON course.course_id = section.course_id 
+        JOIN time_slot ON section.time_slot_id = time_slot.time_slot_id
+        LEFT JOIN takes ON takes.course_id = section.course_id 
+            AND takes.sec_id = section.sec_id 
+            AND takes.semester = section.semester 
+            AND takes.year = section.year
+        LEFT JOIN classroom ON classroom.room_number = section.room_number
+            AND classroom.building_id = section.building_id
+        WHERE section.year=year AND section.semester = semester
+        GROUP BY section.course_id, course.title,
+        course.dept_name, course.credits, 
+        section.sec_id, section.semester, 
+        section.year, section.building_id, 
+        section.room_number, classroom.capacity
+        ORDER BY section.year DESC;
+END //
+DELIMITER ;
+
+
+-- Spring 2026
+INSERT INTO section VALUES ('BIO-101', '1', 'Spring', 2026, 'Smith', '201', 'F');
+INSERT INTO section VALUES ('BIO-201', '1', 'Spring', 2026, 'Smith', '301', 'G');
+INSERT INTO section VALUES ('BIO-301', '1', 'Spring', 2026, 'Cunningham', '401', 'D');
+INSERT INTO section VALUES ('BIO-399', '1', 'Spring', 2026, 'ISB', '201', 'F');
+INSERT INTO section VALUES ('BIO-401', '1', 'Spring', 2026, 'Smith', '101', 'I');
+INSERT INTO section VALUES ('CS-101', '1', 'Spring', 2026, 'McGilvrey', '401', 'H');
+INSERT INTO section VALUES ('CS-190', '1', 'Spring', 2026, 'McGilvrey', '101', 'J');
+INSERT INTO section VALUES ('CS-315', '1', 'Spring', 2026, 'Merrill', '201', 'D');
+INSERT INTO section VALUES ('CS-319', '1', 'Spring', 2026, 'MSB', '101', 'D');
+INSERT INTO section VALUES ('CS-347', '1', 'Spring', 2026, 'Merrill', '101', 'B');
+INSERT INTO section VALUES ('EE-181', '1', 'Spring', 2026, 'ISB', '201', 'H');
+INSERT INTO section VALUES ('EE-201', '1', 'Spring', 2026, 'McGilvrey', '401', 'F');
+INSERT INTO section VALUES ('EE-301', '1', 'Spring', 2026, 'Bowman', '301', 'I');
+INSERT INTO section VALUES ('EE-315', '1', 'Spring', 2026, 'ISB', '101', 'I');
+INSERT INTO section VALUES ('EE-401', '1', 'Spring', 2026, 'MSB', '101', 'D');
+INSERT INTO section VALUES ('FIN-101', '1', 'Spring', 2026, 'McGilvrey', '401', 'I');
+INSERT INTO section VALUES ('FIN-201', '1', 'Spring', 2026, 'Merrill', '201', 'B');
+INSERT INTO section VALUES ('FIN-301', '1', 'Spring', 2026, 'McGilvrey', '201', 'D');
+INSERT INTO section VALUES ('FIN-315', '1', 'Spring', 2026, 'Lowry', '401', 'G');
+INSERT INTO section VALUES ('FIN-401', '1', 'Spring', 2026, 'Satterfield', '101', 'F');
+INSERT INTO section VALUES ('HIS-101', '1', 'Spring', 2026, 'Ritchie', '401', 'J');
+INSERT INTO section VALUES ('HIS-201', '1', 'Spring', 2026, 'Lowry', '201', 'C');
+INSERT INTO section VALUES ('HIS-301', '1', 'Spring', 2026, 'ISB', '101', 'G');
+INSERT INTO section VALUES ('HIS-351', '1', 'Spring', 2026, 'Merrill', '101', 'H');
+INSERT INTO section VALUES ('HIS-401', '1', 'Spring', 2026, 'Bowman', '401', 'H');
+INSERT INTO section VALUES ('MU-101', '1', 'Spring', 2026, 'Merrill', '101', 'G');
+INSERT INTO section VALUES ('MU-199', '1', 'Spring', 2026, 'Lowry', '401', 'D');
+INSERT INTO section VALUES ('MU-201', '1', 'Spring', 2026, 'Cunningham', '301', 'H');
+INSERT INTO section VALUES ('MU-301', '1', 'Spring', 2026, 'ISB', '301', 'B');
+INSERT INTO section VALUES ('MU-401', '1', 'Spring', 2026, 'Smith', '101', 'J');
+INSERT INTO section VALUES ('PHY-101', '1', 'Spring', 2026, 'McGilvrey', '401', 'J');
+INSERT INTO section VALUES ('PHY-201', '1', 'Spring', 2026, 'Bowman', '101', 'C');
+INSERT INTO section VALUES ('PHY-301', '1', 'Spring', 2026, 'MSB', '301', 'F');
+INSERT INTO section VALUES ('PHY-315', '1', 'Spring', 2026, 'Cunningham', '201', 'E');
+INSERT INTO section VALUES ('PHY-401', '1', 'Spring', 2026, 'ISB', '301', 'F');
+
+-- Summer 2026
+INSERT INTO section VALUES ('BIO-101', '1', 'Summer', 2026, 'MSB', '301', 'E');
+INSERT INTO section VALUES ('CS-101', '1', 'Summer', 2026, 'Satterfield', '201', 'G');
+INSERT INTO section VALUES ('CS-190', '1', 'Summer', 2026, 'Bowman', '201', 'B');
+INSERT INTO section VALUES ('EE-181', '1', 'Summer', 2026, 'Smith', '201', 'E');
+INSERT INTO section VALUES ('FIN-101', '1', 'Summer', 2026, 'Ritchie', '201', 'G');
+INSERT INTO section VALUES ('HIS-101', '1', 'Summer', 2026, 'ISB', '401', 'H');
+INSERT INTO section VALUES ('MU-101', '1', 'Summer', 2026, 'Lowry', '201', 'D');
+INSERT INTO section VALUES ('MU-199', '1', 'Summer', 2026, 'Bowman', '401', 'D');
+INSERT INTO section VALUES ('PHY-101', '1', 'Summer', 2026, 'Ritchie', '101', 'D');
+
+-- Fall 2026
+INSERT INTO section VALUES ('BIO-101', '1', 'Fall', 2026, 'ISB', '201', 'C');
+INSERT INTO section VALUES ('BIO-201', '1', 'Fall', 2026, 'Merrill', '101', 'B');
+INSERT INTO section VALUES ('BIO-301', '1', 'Fall', 2026, 'Bowman', '101', 'I');
+INSERT INTO section VALUES ('BIO-399', '1', 'Fall', 2026, 'Merrill', '301', 'A');
+INSERT INTO section VALUES ('CS-101', '1', 'Fall', 2026, 'Cunningham', '201', 'G');
+INSERT INTO section VALUES ('CS-190', '1', 'Fall', 2026, 'ISB', '101', 'H');
+INSERT INTO section VALUES ('CS-315', '1', 'Fall', 2026, 'Lowry', '201', 'B');
+INSERT INTO section VALUES ('CS-319', '1', 'Fall', 2026, 'McGilvrey', '201', 'B');
+INSERT INTO section VALUES ('CS-347', '1', 'Fall', 2026, 'Lowry', '301', 'B');
+INSERT INTO section VALUES ('EE-181', '1', 'Fall', 2026, 'Williams', '201', 'D');
+INSERT INTO section VALUES ('EE-201', '1', 'Fall', 2026, 'Bowman', '201', 'F');
+INSERT INTO section VALUES ('EE-301', '1', 'Fall', 2026, 'ISB', '401', 'F');
+INSERT INTO section VALUES ('EE-315', '1', 'Fall', 2026, 'McGilvrey', '401', 'D');
+INSERT INTO section VALUES ('FIN-101', '1', 'Fall', 2026, 'Satterfield', '101', 'B');
+INSERT INTO section VALUES ('FIN-201', '1', 'Fall', 2026, 'Cunningham', '301', 'D');
+INSERT INTO section VALUES ('FIN-301', '1', 'Fall', 2026, 'Satterfield', '201', 'J');
+INSERT INTO section VALUES ('FIN-315', '1', 'Fall', 2026, 'MSB', '101', 'G');
+INSERT INTO section VALUES ('HIS-101', '1', 'Fall', 2026, 'Bowman', '401', 'A');
+INSERT INTO section VALUES ('HIS-201', '1', 'Fall', 2026, 'McGilvrey', '101', 'F');
+INSERT INTO section VALUES ('HIS-301', '1', 'Fall', 2026, 'ISB', '101', 'D');
+INSERT INTO section VALUES ('HIS-351', '1', 'Fall', 2026, 'Smith', '101', 'C');
+INSERT INTO section VALUES ('MU-101', '1', 'Fall', 2026, 'MSB', '201', 'E');
+INSERT INTO section VALUES ('MU-199', '1', 'Fall', 2026, 'MSB', '401', 'A');
+INSERT INTO section VALUES ('MU-201', '1', 'Fall', 2026, 'Cunningham', '301', 'E');
+INSERT INTO section VALUES ('MU-301', '1', 'Fall', 2026, 'Bowman', '101', 'A');
+INSERT INTO section VALUES ('PHY-101', '1', 'Fall', 2026, 'Smith', '201', 'B');
+INSERT INTO section VALUES ('PHY-201', '1', 'Fall', 2026, 'Merrill', '301', 'G');
+INSERT INTO section VALUES ('PHY-301', '1', 'Fall', 2026, 'Satterfield', '301', 'B');
+INSERT INTO section VALUES ('PHY-315', '1', 'Fall', 2026, 'Smith', '401', 'A');

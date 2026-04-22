@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+{% block title %}Advisor{% endblock %}
+{% block nav_title %}STUDENT PORTAL{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/student" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">My Advisor</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">information and contact details</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-12">
+    {% if advisor_details %}
+    <div class="glass-card rounded-2xl p-8 text-white">
+        <i class="fas fa-chalkboard-teacher text-4xl opacity-60 mb-4"></i>
+        <h3 class="text-2xl font-bold">{{ advisor_details['first_name'] }} {{ advisor_details['last_name'] }}</h3>
+        <p class="mt-2 opacity-70">{{ advisor_details['dept_name'] }} Department</p>
+        <p class="mt-1 opacity-70">{{ advisor_details['username'] ~ '@ksu.edu' }}</p>
+    </div>
+    {% else %}
+    <div class="glass-card rounded-2xl p-8 text-white">
+        <p>No advisor assigned. Please contact your department office.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

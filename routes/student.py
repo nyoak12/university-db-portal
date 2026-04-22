@@ -17,7 +17,33 @@ def dashboard():
 def register():
     if student_required():
         return redirect('/login')
-    return render_template('student/register.html')
+    
+    db = config.get_db()
+    cursor = db.cursor()
+    
+    current_year = datetime.now().year
+    cursor.execute("SELECT DISTINCT semester, year FROM section WHERE year >= %s ORDER BY year, semester", (current_year,))
+    terms = cursor.fetchall()
+    unique_semesters = sorted({term['semester'] for term in terms})
+    unique_years = sorted({str(term['year']) for term in terms}, reverse=True)
+
+    selected_semester = request.args.get('semester')
+    selected_year = request.args.get('year')
+    if selected_semester and selected_year:
+        cursor.callproc('get_sections_by_term', [selected_semester, selected_year])
+        classes_for_registering = cursor.fetchall()
+    else:
+        classes_for_registering = []
+    
+   
+    cursor.close()
+    db.close()
+    return render_template('student/register.html', 
+                           classes_for_registering=classes_for_registering,
+                           unique_semesters=unique_semesters,
+                           unique_years=unique_years, 
+                           selected_semester=selected_semester,
+                           selected_year=selected_year)
 
 @student.route('/student/drop')
 def drop():
@@ -88,7 +114,20 @@ def schedule():
 def advisor():
     if student_required():
         return redirect('/login')
-    return render_template('student/advisor.html')
+    
+    db = config.get_db()
+    cursor = db.cursor()
+    cursor.callproc('read_student', [session['user_id']])
+    student_details = cursor.fetchone()
+    cursor.callproc('read_instructor', [student_details['advisor_id']])
+    advisor_details = cursor.fetchone()
+    cursor.close()
+    db.close()
+
+
+    return render_template('student/advisor.html',
+                            advisor_details=advisor_details,
+                            student_details=student_details)
 
 @student.route('/student/profile')
 def profile():
