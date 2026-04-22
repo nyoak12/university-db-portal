@@ -12,9 +12,7 @@ def dashboard():
         return redirect('/login')
     return render_template('admin/dashboard.html')
 
-# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Students
+# ──────────────────Students──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/students')
 def students():
     if admin_required():
@@ -27,9 +25,7 @@ def students():
     db.close()
     return render_template('admin/students.html', students=students)
 
-# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Instructors
+# ──────────────────Instructors──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/instructors')
 def instructors():
     if admin_required():
@@ -42,9 +38,7 @@ def instructors():
     db.close()
     return render_template('admin/instructors.html', instructors=instructors)
 
-# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Courses
+# ──────────────────Courses──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/courses')
 def courses():
     if admin_required():
@@ -57,9 +51,7 @@ def courses():
     db.close()
     return render_template('admin/courses.html', courses=courses)
 
-# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Sections
+# ──────────────────Sections──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/sections')
 def sections():
     if admin_required():
@@ -72,9 +64,7 @@ def sections():
     db.close()
     return render_template('admin/sections.html', sections=sections)
 
-# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Departments
+# ──────────────────Departments──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/departments')
 def departments():
     if admin_required():
@@ -95,13 +85,17 @@ def departments():
 def create_department():
     if admin_required():
         return redirect('/login')
+    budget = request.form['budget'] or None
+    if budget and float(budget) < 0:
+        flash('Budget cannot be negative.', 'error')
+        return redirect('/admin/departments')
     db = config.get_db()
     cursor = db.cursor()
     try:
         cursor.callproc('create_department', [
             request.form['dept_name'],
             request.form['building_id'] or None,
-            request.form['budget'] or None
+            budget
         ])
         db.commit()
     except Exception as e:
@@ -123,13 +117,17 @@ def create_department():
 def update_department():
     if admin_required():
         return redirect('/login')
+    budget = request.form['budget'] or None
+    if budget and float(budget) < 0:
+        flash('Budget cannot be negative.', 'error')
+        return redirect('/admin/departments')
     db = config.get_db()
     cursor = db.cursor()
     try:
         cursor.callproc('update_department', [
             request.form['dept_name'],
             request.form['building_id'] or None,
-            request.form['budget'] or None
+            budget
         ])
         db.commit()
     except Exception as e:
@@ -164,9 +162,7 @@ def delete_department():
         db.close()
     return redirect('/admin/departments')
 
-# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Classrooms
+# ──────────────────Classrooms──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/classrooms')
 def classrooms():
     if admin_required():
@@ -187,13 +183,25 @@ def classrooms():
 def create_classroom():
     if admin_required():
         return redirect('/login')
+    room_number = request.form['room_number']
+    if not room_number.isalnum():
+        flash('Invalid room number. Use only letters and numbers.', 'error')
+        return redirect('/admin/classrooms')
+    capacity = request.form['capacity'] or None
+    if capacity:
+        if int(capacity) > 500:
+            flash('Capacity cannot exceed 500.', 'error')
+            return redirect('/admin/classrooms')
+        if int(capacity) < 1:
+            flash('Capacity cannot be zero or negative.', 'error')
+            return redirect('/admin/classrooms')
     db = config.get_db()
     cursor = db.cursor()
     try:
         cursor.callproc('create_classroom', [
-            request.form['building_id'],
-            request.form['room_number'],
-            request.form['capacity']
+            request.form['building_id'] or None,
+            room_number,
+            capacity
         ])
         db.commit()
     except Exception as e:
@@ -209,13 +217,21 @@ def create_classroom():
 def update_classroom():
     if admin_required():
         return redirect('/login')
+    capacity = request.form['capacity'] or None
+    if capacity:
+        if int(capacity) > 500:
+            flash('Capacity cannot exceed 500.', 'error')
+            return redirect('/admin/classrooms')
+        if int(capacity) < 1:
+            flash('Capacity cannot be zero or negative.', 'error')
+            return redirect('/admin/classrooms')
     db = config.get_db()
     cursor = db.cursor()
     try:
         cursor.callproc('update_classroom', [
             request.form['building_id'],
             request.form['room_number'],
-            request.form['capacity']
+            capacity
         ])
         db.commit()
     except Exception as e:
@@ -247,9 +263,7 @@ def delete_classroom():
         db.close()
     return redirect('/admin/classrooms')
 
-# ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-# Time Slots
+# ──────────────────Time Slots──────────────────────────────────────────────────────────────────────────────────────────
 @admin.route('/admin/timeslots')
 def timeslots():
     if admin_required():
