@@ -522,6 +522,7 @@ def delete_classroom():
     return redirect('/admin/classrooms')
 
 # ──────────────────Time Slots──────────────────────────────────────────────────────────────────────────────────────────
+# Time Slots
 @admin.route('/admin/timeslots')
 def timeslots():
     if admin_required():
@@ -533,3 +534,70 @@ def timeslots():
     cursor.close()
     db.close()
     return render_template('admin/timeslots.html', timeslots=timeslots)
+
+# Create Time Slot
+@admin.route('/admin/timeslots/create', methods=['POST'])
+def create_timeslot():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('create_timeslot', [
+            request.form['time_slot_id'].upper(),
+            request.form['day'].upper(),
+            request.form['start_time'],
+            request.form['end_time']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/timeslots')
+
+# Update Time Slot
+@admin.route('/admin/timeslots/update', methods=['POST'])
+def update_timeslot():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_timeslot', [
+            request.form['time_slot_id'],
+            request.form['day'],
+            request.form['start_time'],
+            request.form['end_time']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/timeslots')
+
+# Delete Time Slot
+@admin.route('/admin/timeslots/delete', methods=['POST'])
+def delete_timeslot():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('delete_timeslot', [
+            request.form['time_slot_id'],
+            request.form['day']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/timeslots')

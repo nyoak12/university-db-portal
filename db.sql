@@ -7260,7 +7260,7 @@ BEGIN
 END //
 DELIMITER ;
 
----------------------------Department CRUD-------------------------------------------------
+-- Department CRUD
 -- Create department (Admin)
 DELIMITER //
 CREATE PROCEDURE create_department(
@@ -7282,7 +7282,7 @@ BEGIN
 END //
 DELIMITER ;
 
---Update department (Admin)
+-- Update department (Admin)
 DELIMITER //
 CREATE PROCEDURE update_department(
     IN p_dept_name VARCHAR(20),
@@ -7301,7 +7301,7 @@ BEGIN
 END //
 DELIMITER ;
 
---Delete department (Admin)
+-- Delete department (Admin)
 DELIMITER //
 CREATE PROCEDURE delete_department(
     IN p_dept_name VARCHAR(20)
@@ -7323,7 +7323,7 @@ BEGIN
 END //
 DELIMITER ;
 
----------------------------Classroom CRUD-------------------------------------------------
+-- Classroom CRUD
 -- Create classroom (Admin)
 DELIMITER //
 CREATE PROCEDURE create_classroom(
@@ -7382,7 +7382,7 @@ BEGIN
 END //
 DELIMITER ;
 
----------------------------Course CRUD-------------------------------------------------
+-- Course CRUD
 -- Update course (Admin)
 DELIMITER //
 CREATE PROCEDURE update_course(
@@ -7427,3 +7427,82 @@ BEGIN
 END //
 DELIMITER ;
 
+-- Timeslot CRUD
+-- Create Timeslot (Admin)
+DELIMITER //
+CREATE PROCEDURE create_timeslot(
+    IN p_time_slot_id VARCHAR(4),
+    IN p_day VARCHAR(1),
+    IN p_start_time TIME,
+    IN p_end_time TIME
+)
+BEGIN
+    IF p_time_slot_id NOT IN (SELECT time_slot_id FROM time_slot_pattern) THEN
+        INSERT INTO time_slot_pattern (time_slot_id) VALUES (p_time_slot_id);
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'This time slot already has an entry for that day';
+    END IF;
+
+    INSERT INTO time_slot (time_slot_id, day, start_time, end_time)
+    VALUES (p_time_slot_id, p_day, p_start_time, p_end_time);
+END //
+DELIMITER ;
+
+-- Delete Timeslot (Admin)
+DELIMITER //
+CREATE PROCEDURE delete_timeslot(
+    IN p_time_slot_id VARCHAR(4),
+    IN p_day VARCHAR(1)
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Time slot entry does not exist';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM section WHERE time_slot_id = p_time_slot_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete: time slot is assigned to a section';
+    END IF;
+
+    DELETE FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day;
+
+    IF NOT EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id) THEN
+        DELETE FROM time_slot_pattern WHERE time_slot_id = p_time_slot_id;
+    END IF;
+END //
+DELIMITER ;
+
+-- Update Timeslot (Admin)
+DELIMITER //
+CREATE PROCEDURE update_timeslot(
+    IN p_time_slot_id VARCHAR(4),
+    IN p_day VARCHAR(1),
+    IN p_start_time TIME,
+    IN p_end_time TIME
+)
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM time_slot WHERE time_slot_id = p_time_slot_id AND day = p_day) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Time slot entry does not exist';
+    END IF;
+
+    UPDATE time_slot
+    SET start_time = p_start_time,
+        end_time = p_end_time
+    WHERE time_slot_id = p_time_slot_id AND day = p_day;
+END //
+DELIMITER ;
+
+-- Get all time slots with formatted times and ordered by day
+DROP PROCEDURE IF EXISTS get_all_timeslots;
+
+DELIMITER //
+CREATE PROCEDURE get_all_timeslots()
+BEGIN
+    SELECT time_slot_id, day,
+        TIME_FORMAT(start_time, '%H:%i') AS start_time,
+        TIME_FORMAT(end_time, '%H:%i') AS end_time
+    FROM time_slot
+    ORDER BY time_slot_id, FIELD(day, 'M', 'T', 'W', 'R', 'F', 'S');
+END //
+DELIMITER ;
