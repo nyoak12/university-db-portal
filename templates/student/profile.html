@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+{% block title %}Profile{% endblock %}
+{% block nav_title %}STUDENT PORTAL{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/student" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">My Profile</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">edit account information</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-12">
+    {% if student_details %}
+    <div class="glass-card rounded-2xl p-8 text-white">
+        <i class="fas fa-user-circle text-4xl opacity-60 mb-4"></i>
+        <h3 class="text-2xl font-bold">{{ student_details['first_name'] }} {{ student_details['last_name'] }}</h3>
+        <p class="mt-1 opacity-70">ID: {{ student_details['ID'] }}</p>
+
+        <form method="POST" action="/student/profile" class="mt-6 flex flex-col gap-4">
+            <input type="hidden" name="first_name" value="{{ student_details['first_name'] }}">
+            <input type="hidden" name="last_name" value="{{ student_details['last_name'] }}">
+            <input type="hidden" name="advisor_id" value="{{ student_details['advisor_id'] }}">
+
+            <div>
+                <label class="block text-sm opacity-60 mb-1">Change Major</label>
+                <select name="dept_name" class="glass-input rounded-lg px-3 py-2 w-full">
+                    {% for dept in departments %}
+                    <option value="{{ dept['dept_name'] }}" {% if dept['dept_name'] == student_details['dept_name'] %}selected{% endif %}>
+                        {{ dept['dept_name'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm opacity-60 mb-1">New Password</label>
+                <input type="password" name="password" placeholder="Leave blank to keep current" class="glass-input rounded-lg px-3 py-2 w-full">
+            </div>
+
+            <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white mt-2 self-start">Save Changes</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="glass-card rounded-2xl p-8 text-white">
+        <p>Could not load profile. Please contact your department office.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+{% block title %}Drop Classes{% endblock %}
+{% block nav_title %}STUDENT PORTAL{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/student" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">Drop Classes</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">Current and upcoming enrollments</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-12">
+    {% if terms %}
+    <form method="GET" action="/student/drop" class="flex gap-4 mb-6">
+        <select name="term" class="glass-input rounded-lg px-3 py-2">
+            {% for term in terms %}
+            <option value="{{ term[0] }}-{{ term[1] }}" {% if term[0] ~ '-' ~ term[1] == selected_term %}selected{% endif %}>
+                {{ term[0] }} {{ term[1] }}
+            </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white">Filter</button>
+    </form>
+    {% endif %}
+
+    <div class="glass-card rounded-2xl shadow-lg overflow-hidden">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Course</th><th>Credits</th><th>Days</th><th>Start</th><th>End</th><th>Location</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in selected_courses %}
+                <tr>
+                    <td>{{ row['title'] }}</td>
+                    <td>{{ row['credits'] }}</td>
+                    <td>{{ row['days'] }}</td>
+                    <td>{{ row['start_time'] }}</td>
+                    <td>{{ row['end_time'] }}</td>
+                    <td>{{ row['building_id'] }} {{ row['room_number'] }}</td>
+                    <td>
+                        <form method="POST" action="/student/drop">
+                            <input type="hidden" name="course_id" value="{{ row['course_id'] }}">
+                            <input type="hidden" name="sec_id" value="{{ row['sec_id'] }}">
+                            <input type="hidden" name="semester" value="{{ row['semester'] }}">
+                            <input type="hidden" name="year" value="{{ row['year'] }}">
+                            <input type="hidden" name="term" value="{{ selected_term }}">
+                            <button type="submit" class="text-red-300 hover:text-red-100 text-sm">Drop</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center py-6" style="color:rgba(255,255,255,0.4);">No classes for this term</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

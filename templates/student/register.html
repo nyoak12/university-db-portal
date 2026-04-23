@@ -51,6 +51,21 @@
                     <td>{% if course['capacity'] %}
                             {{ course['enrolled_students'] }}/{{ course['capacity'] }}
                         {% else %}TBD{% endif %}</td>
+                    <td>
+                        {% if course['course_id'] in enrolled %}
+                        <i class="fas fa-check-circle" style="color: rgba(74,222,128,1)"></i>
+                        {% elif course['course_id'] in eligible %}
+                        <form method="POST" action="/student/register">
+                            <input type="hidden" name="course_id" value="{{ course['course_id'] }}">
+                            <input type="hidden" name="sec_id" value="{{ course['sec_id'] }}">
+                            <input type="hidden" name="semester" value="{{ course['semester'] }}">
+                            <input type="hidden" name="year" value="{{ course['year'] }}">
+                            <button type="submit" class="text-blue-300 hover:text-blue-100 text-sm">Enroll</button>
+                        </form>
+                        {% else %}
+                        <span style="color:rgba(255,255,255,0.3)" class="text-sm">Prereqs not met</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

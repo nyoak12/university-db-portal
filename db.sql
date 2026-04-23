@@ -7272,7 +7272,7 @@ BEGIN
         section.sec_id, section.semester, 
         section.year, section.building_id, 
         section.room_number, 
-        COUNT(takes.ID) as enrolled_students,
+        COUNT(DISTINCT takes.ID) as enrolled_students,
         classroom.capacity,
         GROUP_CONCAT(time_slot.day ORDER BY time_slot.day) as days, 
         MIN(time_slot.start_time) as start_time, MIN(time_slot.end_time) as end_time
@@ -7619,5 +7619,73 @@ BEGIN
         TIME_FORMAT(end_time, '%h:%i %p') AS end_time
     FROM time_slot
     ORDER BY time_slot_id, FIELD(day, 'M', 'T', 'W', 'R', 'F', 'S');
+END //
+DELIMITER ;
+
+--
+DELIMITER //
+CREATE PROCEDURE get_droppable_courses(IN student_id VARCHAR(6))
+BEGIN
+    SELECT takes.course_id, takes.sec_id, takes.semester, takes.year,
+           course.title, course.credits,
+           classroom.building_id, classroom.room_number,
+           GROUP_CONCAT(time_slot.day ORDER BY time_slot.day) AS days,
+           MIN(time_slot.start_time) AS start_time,
+           MIN(time_slot.end_time) AS end_time
+    FROM takes
+    JOIN section ON takes.sec_id = section.sec_id 
+        AND takes.course_id = section.course_id
+        AND takes.semester = section.semester 
+        AND takes.year = section.year
+    JOIN course ON section.course_id = course.course_id
+    JOIN time_slot ON section.time_slot_id = time_slot.time_slot_id
+    JOIN classroom ON section.building_id = classroom.building_id
+        AND section.room_number = classroom.room_number
+    WHERE takes.ID = student_id 
+        AND takes.grade IS NULL
+    GROUP BY takes.course_id, takes.sec_id, takes.semester, takes.year,
+             course.title, course.credits, classroom.building_id, classroom.room_number;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE drop_enrollment(
+    IN p_student_id VARCHAR(6),
+    IN p_course_id VARCHAR(8),
+    IN p_sec_id VARCHAR(8),
+    IN p_semester VARCHAR(6),
+    IN p_year NUMERIC(4,0)
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM takes WHERE ID = p_student_id AND course_id = p_course_id
+        AND sec_id = p_sec_id AND semester = p_semester AND year = p_year AND grade IS NULL
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Enrollment not found or already graded';
+    END IF;
+    DELETE FROM takes WHERE ID = p_student_id AND course_id = p_course_id
+        AND sec_id = p_sec_id AND semester = p_semester AND year = p_year;
+END //
+DELIMITER ;
+
+
+-- prereq check that pairs with register for classes page
+DELIMITER //
+CREATE PROCEDURE get_eligible_courses(IN p_student_id VARCHAR(6))
+BEGIN
+    SELECT DISTINCT course_id FROM course
+    WHERE NOT EXISTS (
+        SELECT prereq_id FROM prereq
+        WHERE prereq.course_id = course.course_id
+        AND prereq_id NOT IN (SELECT course_id FROM transcript WHERE ID = p_student_id)
+    );
+END //
+DELIMITER ;
+
+-- admin, instructor and student change password while session is currently logged on
+DELIMITER //
+CREATE PROCEDURE change_password(IN p_id VARCHAR(6), IN p_new_password VARCHAR(255))
+BEGIN
+    UPDATE login SET password = SHA2(p_new_password, 256) WHERE user_id = p_id;
 END //
 DELIMITER ;
