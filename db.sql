@@ -7207,6 +7207,9 @@ UPDATE login SET password = SHA2('test123', 256) WHERE user_id = 'S00004';
 
 UPDATE login SET password = SHA2('test123', 256) WHERE user_id = 'S00054';
 
+-- update instructor mpena and jclarke to use for testing
+UPDATE login SET password = SHA2('test123', 256) WHERE user_id = 'I00001';
+UPDATE login SET password = SHA2('test123', 256) WHERE user_id = 'I00008';
 
 -- read student transcript return all fields where there is valid grades
 DELIMITER //
@@ -7687,5 +7690,68 @@ DELIMITER //
 CREATE PROCEDURE change_password(IN p_id VARCHAR(6), IN p_new_password VARCHAR(255))
 BEGIN
     UPDATE login SET password = SHA2(p_new_password, 256) WHERE user_id = p_id;
+END //
+DELIMITER ;
+
+-- returns current advisees for instructor
+DELIMITER //
+CREATE PROCEDURE get_advisees(IN p_instructor_id VARCHAR(6))
+BEGIN
+    SELECT s.ID, s.first_name, s.last_name, s.dept_name, l.username
+    FROM student s
+    JOIN login l ON l.user_id = s.ID
+    WHERE s.advisor_id = p_instructor_id
+    ORDER BY s.last_name;
+END //
+DELIMITER ;
+
+-- instructor drop down menu for adding an unadvised student
+DELIMITER //
+CREATE PROCEDURE get_unadvised_students()
+BEGIN
+    SELECT s.ID, s.first_name, s.last_name
+    FROM student s
+    WHERE s.advisor_id IS NULL
+    ORDER BY s.last_name;
+END //
+DELIMITER ;
+
+-- update student with new advisor role assigned by instructor
+
+DELIMITER //
+CREATE PROCEDURE assign_advisor(IN p_student_id VARCHAR(6), IN p_instructor_id VARCHAR(6))
+BEGIN
+    UPDATE student SET advisor_id = p_instructor_id WHERE ID = p_student_id;
+END //
+DELIMITER ;
+
+DELIMITER // 
+CREATE PROCEDURE drop_advisee(IN p_student_id VARCHAR(6))
+BEGIN
+    UPDATE student SET advisor_id = NULL WHERE ID = p_student_id;
+END //
+DELIMITER ;
+
+-- find teaches sections for filtering by most recent finished term
+DELIMITER //
+CREATE PROCEDURE get_instructor_sections(IN p_instructor_id VARCHAR(6), IN p_semester VARCHAR(6), IN p_year NUMERIC(4,0))
+BEGIN
+    SELECT t.course_id, t.sec_id, t.semester, t.year, c.title
+    FROM teaches t
+    JOIN course c ON c.course_id = t.course_id
+    WHERE t.ID = p_instructor_id AND t.semester = p_semester AND t.year = p_year;
+END //
+DELIMITER ;
+
+-- return students class roster for instructor
+DELIMITER //
+CREATE PROCEDURE get_section_roster(IN p_course_id VARCHAR(8), IN p_sec_id VARCHAR(8), IN p_semester VARCHAR(6), IN p_year NUMERIC(4,0))
+BEGIN
+    SELECT s.ID, s.first_name, s.last_name, tk.grade
+    FROM takes tk
+    JOIN student s ON s.ID = tk.ID
+    WHERE tk.course_id = p_course_id AND tk.sec_id = p_sec_id
+        AND tk.semester = p_semester AND tk.year = p_year
+    ORDER BY s.last_name;
 END //
 DELIMITER ;
