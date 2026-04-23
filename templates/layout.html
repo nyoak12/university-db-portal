@@ -16,9 +16,10 @@
 
         /* Dashboard/nav cards — frosted glass panels */
         .glass-card {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(120,180,255,0.08);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
             transition: all 0.2s ease;
         }
         .glass-card:hover {
@@ -42,7 +43,7 @@
 </head>
 
 <!-- Deep Ocean gradient background -->
-<body style="background: linear-gradient(135deg, #001845, #002a5c);" class="min-h-screen">
+<body style="background: linear-gradient(180deg, #000d2b, #001a4d)" class="min-h-screen">
 
     <!-- Navbar — only shown when logged in -->
     {% if session.get('user_id') %}
