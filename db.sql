@@ -7906,7 +7906,7 @@ BEGIN
 END //
 DELIMITER ;
 
---Enrolled students in departments
+-- Enrolled students in departments
 DELIMITER //
 CREATE PROCEDURE currently_enrolled_by_department()
 BEGIN
