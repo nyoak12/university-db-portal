@@ -1,0 +1,156 @@
+{% extends 'layout.html' %}
+{% block title %}Teaches{% endblock %}
+{% block nav_title %}KSU ADMIN{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">Instructor Assignments</h2>
+    <p class="text-white opacity-50 mt-1">Assign instructors to course sections</p>
+</div>
+
+<div class="max-w-6xl mx-auto px-8 pb-12">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flex items-center gap-2 mb-4 text-red-400 text-sm">
+                    <span>⚠️ {{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Assign Form -->
+    <div class="glass-card rounded-2xl p-6 mb-6">
+        <h3 class="text-white font-semibold mb-4">Assign Instructor to Section</h3>
+        <form action="/admin/teaches/assign" method="POST" novalidate>
+            <div class="flex gap-4 flex-wrap">
+                <select name="instructor_id" required class="glass-input rounded-lg px-4 py-2 w-56">
+                    <option value="" disabled selected>-- Instructor --</option>
+                    {% for instructor in instructors %}
+                        <option value="{{ instructor['ID'] }}">{{ instructor['ID'] }} — {{ instructor['first_name'] }} {{ instructor['last_name'] }}</option>
+                    {% endfor %}
+                </select>
+                <select name="course_id" id="assign_course" required class="glass-input rounded-lg px-4 py-2 w-40"
+                    onchange="filterSections()">
+                    <option value="" disabled selected>-- Course --</option>
+                    {% set seen_courses = [] %}
+                    {% for section in sections %}
+                        {% if section['course_id'] not in seen_courses %}
+                            <option value="{{ section['course_id'] }}">{{ section['course_id'] }}</option>
+                            {% set _ = seen_courses.append(section['course_id']) %}
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <select name="sec_id" id="assign_sec_id" required class="glass-input rounded-lg px-4 py-2 w-32">
+                    <option value="" disabled selected>-- Section --</option>
+                </select>
+                <select name="semester" id="assign_semester" required class="glass-input rounded-lg px-4 py-2 w-36">
+                    <option value="" disabled selected>-- Semester --</option>
+                </select>
+                <select name="year" id="assign_year" required class="glass-input rounded-lg px-4 py-2 w-28">
+                    <option value="" disabled selected>-- Year --</option>
+                </select>
+                <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
+                    Assign
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card rounded-2xl shadow-lg overflow-x-auto">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Instructor ID</th>
+                    <th>Instructor Name</th>
+                    <th>Course ID</th>
+                    <th>Section ID</th>
+                    <th>Semester</th>
+                    <th>Year</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in teaches %}
+                <tr>
+                    <td>{{ t['instructor_id'] }}</td>
+                    <td>{{ t['instructor_name'] }}</td>
+                    <td>{{ t['course_id'] }}</td>
+                    <td>{{ t['sec_id'] }}</td>
+                    <td>{{ t['semester'] }}</td>
+                    <td>{{ t['year'] }}</td>
+                    <td>
+                        <form action="/admin/teaches/remove" method="POST">
+                            <input type="hidden" name="instructor_id" value="{{ t['instructor_id'] }}">
+                            <input type="hidden" name="course_id" value="{{ t['course_id'] }}">
+                            <input type="hidden" name="sec_id" value="{{ t['sec_id'] }}">
+                            <input type="hidden" name="semester" value="{{ t['semester'] }}">
+                            <input type="hidden" name="year" value="{{ t['year'] }}">
+                            <button type="submit"
+                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                Remove
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Store all sections from the server as a JS array
+    const sections = {{ sections | tojson }};
+
+    // When course is selected, filter sec_id, semester, and year dropdowns
+    function filterSections() {
+        const courseId = document.getElementById('assign_course').value;
+        const secSelect = document.getElementById('assign_sec_id');
+        const semesterSelect = document.getElementById('assign_semester');
+        const yearSelect = document.getElementById('assign_year');
+
+        // Reset all dependent dropdowns
+        secSelect.innerHTML = '<option value="" disabled selected>-- Section --</option>';
+        semesterSelect.innerHTML = '<option value="" disabled selected>-- Semester --</option>';
+        yearSelect.innerHTML = '<option value="" disabled selected>-- Year --</option>';
+
+        if (!courseId) return;
+
+        // Filter sections matching selected course
+        const matched = sections.filter(s => s.course_id === courseId);
+
+        // Deduplicate sec_id, semester, year
+        const seenSec = [], seenSem = [], seenYear = [];
+
+        matched.forEach(s => {
+            if (!seenSec.includes(s.sec_id)) {
+                seenSec.push(s.sec_id);
+                const opt = document.createElement('option');
+                opt.value = s.sec_id;
+                opt.textContent = s.sec_id;
+                secSelect.appendChild(opt);
+            }
+            if (!seenSem.includes(s.semester)) {
+                seenSem.push(s.semester);
+                const opt = document.createElement('option');
+                opt.value = s.semester;
+                opt.textContent = s.semester;
+                semesterSelect.appendChild(opt);
+            }
+            if (!seenYear.includes(s.year)) {
+                seenYear.push(s.year);
+                const opt = document.createElement('option');
+                opt.value = s.year;
+                opt.textContent = s.year;
+                yearSelect.appendChild(opt);
+            }
+        });
+    }
+</script>
+
+{% endblock %}

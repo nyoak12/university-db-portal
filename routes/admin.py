@@ -705,3 +705,232 @@ def delete_timeslot():
         cursor.close()
         db.close()
     return redirect('/admin/timeslots')
+
+# ──────────────────Teaches──────────────────────────────────────────────────────────────────────────────────────────
+# Teaches
+@admin.route('/admin/teaches')
+def teaches():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    cursor.callproc('get_all_teaches')
+    teaches = cursor.fetchall()
+    cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_instructors')
+    instructors = cursor.fetchall()
+    cursor.close()
+    cursor = db.cursor()
+    cursor.callproc('get_all_sections')
+    sections = cursor.fetchall()
+    cursor.close()
+    db.close()
+    return render_template('admin/teaches.html', teaches=teaches, instructors=instructors, sections=sections)
+
+# Assign Instructor
+@admin.route('/admin/teaches/assign', methods=['POST'])
+def assign_instructor():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('assign_instructor', [
+            request.form['instructor_id'],
+            request.form['course_id'],
+            request.form['sec_id'],
+            request.form['semester'],
+            request.form['year']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/teaches')
+
+# Remove Instructor
+@admin.route('/admin/teaches/remove', methods=['POST'])
+def remove_instructor():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('remove_instructor', [
+            request.form['instructor_id'],
+            request.form['course_id'],
+            request.form['sec_id'],
+            request.form['semester'],
+            request.form['year']
+        ])
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/teaches')
+
+# ──────────────────Admin Profile──────────────────────────────────────────────────────────────────────────────────────────
+# Admin Profile
+@admin.route('/admin/admin_profile')
+def profile():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT a.ID, a.first_name, a.last_name, l.username FROM admin a JOIN login l ON a.ID = l.user_id WHERE a.ID = %s', (session['user_id'],))
+    admin_data = cursor.fetchone()
+    cursor.close()
+    db.close()
+    return render_template('admin/admin_profile.html', admin=admin_data)
+
+# Update Admin Profile
+@admin.route('/admin/admin_profile/update', methods=['POST'])
+def update_profile():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    try:
+        cursor.callproc('update_admin_profile', [
+            session['user_id'],
+            request.form['first_name'],
+            request.form['last_name'],
+            request.form['username'],
+            request.form['password']
+        ])
+        db.commit()
+        session['first_name'] = request.form['first_name']
+    except Exception as e:
+        db.rollback()
+        flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
+    finally:
+        cursor.close()
+        db.close()
+    return redirect('/admin/admin_profile')
+
+# ──────────────────Queries──────────────────────────────────────────────────────────────────────────────────────────
+@admin.route('/admin/queries')
+def queries():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+
+    cursor.callproc('avg_grade_by_department')
+    avg_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('total_students_by_department')
+    total_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('currently_enrolled_by_department')
+    enrolled_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('get_all_courses')
+    courses = cursor.fetchall()
+    cursor.close()
+
+    db.close()
+    return render_template('admin/queries.html',
+        avg_by_dept=avg_by_dept,
+        total_by_dept=total_by_dept,
+        enrolled_by_dept=enrolled_by_dept,
+        courses=courses
+    )
+
+@admin.route('/admin/queries/class_range', methods=['POST'])
+def query_class_range():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    cursor.callproc('avg_grade_by_class_range', [
+        request.form['course_id'],
+        request.form['start_year'],
+        request.form['end_year']
+    ])
+    class_range_results = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('avg_grade_by_department')
+    avg_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('total_students_by_department')
+    total_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('currently_enrolled_by_department')
+    enrolled_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('get_all_courses')
+    courses = cursor.fetchall()
+    cursor.close()
+
+    db.close()
+    return render_template('admin/queries.html',
+        avg_by_dept=avg_by_dept,
+        total_by_dept=total_by_dept,
+        enrolled_by_dept=enrolled_by_dept,
+        courses=courses,
+        class_range_results=class_range_results
+    )
+
+@admin.route('/admin/queries/best_worst', methods=['POST'])
+def query_best_worst():
+    if admin_required():
+        return redirect('/login')
+    db = config.get_db()
+    cursor = db.cursor()
+    cursor.callproc('best_worst_classes', [
+        request.form['semester'],
+        request.form['year']
+    ])
+    best_worst_results = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('avg_grade_by_department')
+    avg_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('total_students_by_department')
+    total_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('currently_enrolled_by_department')
+    enrolled_by_dept = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.callproc('get_all_courses')
+    courses = cursor.fetchall()
+    cursor.close()
+
+    db.close()
+    return render_template('admin/queries.html',
+        avg_by_dept=avg_by_dept,
+        total_by_dept=total_by_dept,
+        enrolled_by_dept=enrolled_by_dept,
+        courses=courses,
+        best_worst_results=best_worst_results
+    )

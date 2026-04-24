@@ -27,6 +27,7 @@ def login():
         session['user_id'] = user['ID']
         session['role'] = user['role']
         session['first_name'] = user['first_name']
+        session['last_name'] = user['last_name']
         return redirect('/' + user['role'])
     except pymysql.err.OperationalError:
         return render_template('login.html', error='Invalid username or password')
