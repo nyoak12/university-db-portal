@@ -4,13 +4,15 @@
 
 {% block content %}
 {% set cards = [
-    {'href': '/admin/students', 'icon': 'fa-user-graduate', 'label': 'Students'},
-    {'href': '/admin/instructors', 'icon': 'fa-chalkboard-teacher', 'label': 'Instructors'},
-    {'href': '/admin/courses', 'icon': 'fa-book-open', 'label': 'Courses'},
-    {'href': '/admin/sections', 'icon': 'fa-calendar-alt', 'label': 'Sections'},
     {'href': '/admin/departments', 'icon': 'fa-university', 'label': 'Departments'},
     {'href': '/admin/classrooms', 'icon': 'fa-door-open', 'label': 'Classrooms'},
-    {'href': '/admin/timeslots', 'icon': 'fa-clock', 'label': 'Time Slots'}
+    {'href': '/admin/courses', 'icon': 'fa-book-open', 'label': 'Courses'},
+    {'href': '/admin/timeslots', 'icon': 'fa-clock', 'label': 'Time Slots'},
+    {'href': '/admin/sections', 'icon': 'fa-calendar-alt', 'label': 'Sections'},
+    {'href': '/admin/instructors', 'icon': 'fa-chalkboard-teacher', 'label': 'Instructors'},
+    {'href': '/admin/teaches', 'icon': 'fa-chalkboard', 'label': 'Instructor Assignments'},
+    {'href': '/admin/students', 'icon': 'fa-user-graduate', 'label': 'Students'},
+    {'href': '/admin/queries', 'icon': 'fa-chart-bar', 'label': 'Analytics & Queries'},
 ] %}
 
 <div class="px-8 py-12">
@@ -19,11 +21,11 @@
 </div>
 
 <div class="max-w-5xl mx-auto px-8 pb-8">
-    <div class="flex flex-col gap-4">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
         {% for card in cards %}
         <a href="{{ card.href }}" class="glass-card rounded-2xl p-6 shadow-lg flex flex-col items-center gap-2">
             <i class="fas {{ card.icon }} text-3xl text-white opacity-80"></i>
-            <span class="text-lg font-semibold text-white">{{ card.label }}</span>
+            <span class="text-sm font-semibold text-white text-center">{{ card.label }}</span>
         </a>
         {% endfor %}
     </div>

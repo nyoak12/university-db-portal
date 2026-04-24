@@ -7377,6 +7377,8 @@ INSERT INTO section VALUES ('PHY-101', '1', 'Fall', 2026, 'Smith', '201', 'B');
 INSERT INTO section VALUES ('PHY-201', '1', 'Fall', 2026, 'Merrill', '301', 'G');
 INSERT INTO section VALUES ('PHY-301', '1', 'Fall', 2026, 'Satterfield', '301', 'B');
 INSERT INTO section VALUES ('PHY-315', '1', 'Fall', 2026, 'Smith', '401', 'A');
+
+
 -- Department CRUD
 -- Create department (Admin)
 DELIMITER //
@@ -7753,5 +7755,168 @@ BEGIN
     WHERE tk.course_id = p_course_id AND tk.sec_id = p_sec_id
         AND tk.semester = p_semester AND tk.year = p_year
     ORDER BY s.last_name;
+END //
+DELIMITER ;
+
+-- Admin removing an instructor
+DELIMITER //
+CREATE PROCEDURE remove_instructor(
+    IN p_instructor_id VARCHAR(6),
+    IN p_course_id VARCHAR(8),
+    IN p_sec_id VARCHAR(8),
+    IN p_semester VARCHAR(6),
+    IN p_year NUMERIC(4,0)
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM teaches
+        WHERE ID = p_instructor_id AND course_id = p_course_id
+            AND sec_id = p_sec_id AND semester = p_semester AND year = p_year
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'This instructor is not assigned to this section';
+    END IF;
+
+    DELETE FROM teaches
+    WHERE ID = p_instructor_id
+        AND course_id = p_course_id
+        AND sec_id = p_sec_id
+        AND semester = p_semester
+        AND year = p_year;
+END //
+DELIMITER ;
+
+-- What classes an instructor teaches
+DELIMITER //
+CREATE PROCEDURE get_all_teaches()
+BEGIN
+    SELECT 
+        t.ID AS instructor_id,
+        CONCAT(i.first_name, ' ', i.last_name) AS instructor_name,
+        t.course_id,
+        t.sec_id,
+        t.semester,
+        t.year
+    FROM teaches t
+    JOIN instructor i ON t.ID = i.ID
+    ORDER BY t.year DESC, t.semester, t.course_id;
+END //
+DELIMITER ;
+
+-- Update Admin Information
+DELIMITER //
+CREATE PROCEDURE update_admin_profile(
+    IN p_id VARCHAR(3),
+    IN p_first_name VARCHAR(20),
+    IN p_last_name VARCHAR(20),
+    IN p_username VARCHAR(50),
+    IN p_password VARCHAR(255)
+)
+BEGIN
+    UPDATE admin
+    SET first_name = p_first_name,
+        last_name = p_last_name
+    WHERE ID = p_id;
+
+    UPDATE login
+    SET username = p_username,
+        password = SHA2(p_password, 256)
+    WHERE user_id = p_id;
+END //
+DELIMITER ;
+
+-- Additional Queries
+
+-- Average grade by department
+DELIMITER //
+CREATE PROCEDURE avg_grade_by_department()
+BEGIN
+    SELECT 
+        s.dept_name,
+        ROUND(AVG(gv.points), 2) AS avg_gpa,
+        COUNT(DISTINCT s.ID) AS total_students
+    FROM student s
+    JOIN takes t ON s.ID = t.ID
+    JOIN grade_value gv ON t.grade = gv.letter_grade
+    WHERE t.grade IS NOT NULL
+    GROUP BY s.dept_name
+    ORDER BY avg_gpa DESC;
+END //
+DELIMITER ;
+
+-- Average grade by class
+DELIMITER //
+CREATE PROCEDURE avg_grade_by_class_range(
+    IN p_course_id VARCHAR(8),
+    IN p_start_year NUMERIC(4,0),
+    IN p_end_year NUMERIC(4,0)
+)
+BEGIN
+    SELECT 
+        t.course_id,
+        c.title,
+        t.semester,
+        t.year,
+        ROUND(AVG(gv.points), 2) AS avg_gpa,
+        COUNT(DISTINCT t.ID) AS total_students
+    FROM takes t
+    JOIN course c ON t.course_id = c.course_id
+    JOIN grade_value gv ON t.grade = gv.letter_grade
+    WHERE t.course_id = p_course_id
+        AND t.year BETWEEN p_start_year AND p_end_year
+        AND t.grade IS NOT NULL
+    GROUP BY t.course_id, c.title, t.semester, t.year
+    ORDER BY t.year, t.semester;
+END //
+DELIMITER ;
+
+-- Best and worst classes by semester
+DELIMITER //
+CREATE PROCEDURE best_worst_classes(
+    IN p_semester VARCHAR(6),
+    IN p_year NUMERIC(4,0)
+)
+BEGIN
+    SELECT 
+        t.course_id,
+        c.title,
+        ROUND(AVG(gv.points), 2) AS avg_gpa,
+        COUNT(DISTINCT t.ID) AS total_students
+    FROM takes t
+    JOIN course c ON t.course_id = c.course_id
+    JOIN grade_value gv ON t.grade = gv.letter_grade
+    WHERE t.semester = p_semester
+        AND t.year = p_year
+        AND t.grade IS NOT NULL
+    GROUP BY t.course_id, c.title
+    ORDER BY avg_gpa DESC;
+END //
+DELIMITER ;
+
+-- Total students in department
+DELIMITER //
+CREATE PROCEDURE total_students_by_department()
+BEGIN
+    SELECT 
+        d.dept_name,
+        COUNT(DISTINCT s.ID) AS total_students
+    FROM department d
+    LEFT JOIN student s ON d.dept_name = s.dept_name
+    GROUP BY d.dept_name
+    ORDER BY total_students DESC;
+END //
+DELIMITER ;
+
+-- Enrolled students in departments
+DELIMITER //
+CREATE PROCEDURE currently_enrolled_by_department()
+BEGIN
+    SELECT 
+        d.dept_name,
+        COUNT(DISTINCT t.ID) AS enrolled_students
+    FROM department d
+    LEFT JOIN student s ON d.dept_name = s.dept_name
+    LEFT JOIN takes t ON s.ID = t.ID AND t.grade IS NULL
+    GROUP BY d.dept_name
+    ORDER BY enrolled_students DESC;
 END //
 DELIMITER ;

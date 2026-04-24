@@ -1,0 +1,61 @@
+{% extends 'layout.html' %}
+{% block title %}Admin Profile{% endblock %}
+{% block nav_title %}KSU ADMIN{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">My Profile</h2>
+    <p class="text-white opacity-50 mt-1">Update your personal information</p>
+</div>
+
+<div class="max-w-xl mx-auto px-8 pb-12">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flex items-center gap-2 mb-4 text-red-400 text-sm">
+                    <span>⚠️ {{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="glass-card rounded-2xl p-8">
+        <!-- Read-only ID -->
+        <div class="mb-6">
+            <label class="text-white opacity-50 text-sm">Admin ID (cannot be changed)</label>
+            <p class="text-white font-semibold text-lg mt-1">{{ admin['ID'] }}</p>
+        </div>
+
+        <form action="/admin/admin_profile/update" method="POST" novalidate>
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label class="text-white opacity-50 text-sm">First Name</label>
+                    <input type="text" name="first_name" value="{{ admin['first_name'] }}" required
+                        class="glass-input rounded-lg px-4 py-2 w-full mt-1">
+                </div>
+                <div>
+                    <label class="text-white opacity-50 text-sm">Last Name</label>
+                    <input type="text" name="last_name" value="{{ admin['last_name'] }}" required
+                        class="glass-input rounded-lg px-4 py-2 w-full mt-1">
+                </div>
+                <div>
+                    <label class="text-white opacity-50 text-sm">Username</label>
+                    <input type="text" name="username" value="{{ admin['username'] }}" required
+                        class="glass-input rounded-lg px-4 py-2 w-full mt-1">
+                </div>
+                <div>
+                    <label class="text-white opacity-50 text-sm">New Password</label>
+                    <input type="password" name="password" placeholder="Enter new password"
+                        class="glass-input rounded-lg px-4 py-2 w-full mt-1">
+                </div>
+                <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold mt-2">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

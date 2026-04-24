@@ -55,6 +55,12 @@
         <!-- User info + logout -->
         <div class="flex items-center gap-4">
             <span class="text-sm text-white opacity-70">{{ session.get('first_name', '') }}</span>
+            {% if session.get('role') == 'admin' %}
+            <a href="/admin/admin_profile"
+                style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white; text-decoration: none;">
+                {{ session.get('first_name', '?')[0] }}{{ session.get('last_name', '?')[0] }}
+            </a>
+            {% endif %}
             <a href="/logout"
                 style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);"
                 class="text-sm text-white px-3 py-1 rounded hover:opacity-80">Logout</a>
