@@ -14,7 +14,8 @@
     <div class="glass-card rounded-2xl p-8 text-white">
         <i class="fas fa-user-circle text-4xl opacity-60 mb-4"></i>
         <h3 class="text-2xl font-bold">{{ student_details['first_name'] }} {{ student_details['last_name'] }}</h3>
-        <p class="mt-1 opacity-70">Student ID: {{ student_details['ID'] }}</p>
+        <p class="mt-1 opacity-70">{{ student_details['username'] ~ '@ksu.edu' }}</p>
+        <p class="mt-1 opacity-70">ID: {{ student_details['ID'] }}</p>
 
         <form method="POST" action="/student/profile" class="mt-6 flex flex-col gap-4">
             <input type="hidden" name="first_name" value="{{ student_details['first_name'] }}">

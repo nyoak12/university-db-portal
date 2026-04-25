@@ -359,9 +359,11 @@ BEGIN
         s.last_name,
         s.dept_name,
         s.advisor_id,
-        CONCAT(i.first_name, ' ', i.last_name) AS advisor_name
+        CONCAT(i.first_name, ' ', i.last_name) AS advisor_name,
+        l.username
     FROM student s
     LEFT JOIN instructor i ON s.advisor_id = i.ID
+    LEFT JOIN login l ON l.user_id = s.ID
     WHERE s.ID = p_id;
 END //
 DELIMITER ;
@@ -871,7 +873,8 @@ BEGIN
         p_year,
         p_grade
     FROM course c
-    WHERE c.course_id = p_course_id;
+    WHERE c.course_id = p_course_id
+    ON DUPLICATE KEY UPDATE grade = p_grade;
 
     COMMIT;
 END //
@@ -7918,5 +7921,13 @@ BEGIN
     LEFT JOIN takes t ON s.ID = t.ID AND t.grade IS NULL
     GROUP BY d.dept_name
     ORDER BY enrolled_students DESC;
+END //
+DELIMITER ;
+
+-- remove prereq
+DELIMITER //
+CREATE PROCEDURE remove_prereq(IN p_course_id VARCHAR(8), IN p_prereq_id VARCHAR(8))
+BEGIN
+    DELETE FROM prereq WHERE course_id = p_course_id AND prereq_id = p_prereq_id;
 END //
 DELIMITER ;

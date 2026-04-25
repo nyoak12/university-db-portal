@@ -1,31 +1,46 @@
 {% extends 'layout.html' %}
-{% block title %}Grades{% endblock %}
+{% block title %}Roster{% endblock %}
 {% block nav_title %}INSTRUCTOR PORTAL{% endblock %}
 
 {% block content %}
 <div class="px-8 py-10">
     <a href="/instructor" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
-    <h2 class="text-3xl font-bold text-white mt-4">Submit Grades</h2>
-    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">{{ prev_semester }} {{ prev_year }}</p>
+    <h2 class="text-3xl font-bold text-white mt-4">Section Roster</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">view and manage enrolled students by section</p>
 </div>
 
 <div class="max-w-5xl mx-auto px-8 pb-12">
 
-    <!-- Section Selector -->
-    <form method="GET" action="/instructor/grades" class="flex gap-4 mb-6">
+    <!-- Term Filter -->
+    <form method="GET" action="/instructor/roster" class="flex gap-4 mb-4">
+        <select name="term" class="glass-input rounded-lg px-3 py-2">
+            {% for term in terms %}
+            <option value="{{ term['semester'] }}-{{ term['year'] }}"
+                {% if term['semester'] ~ '-' ~ term['year'] == selected_term %}selected{% endif %}>
+                {{ term['semester'] }} {{ term['year'] }}
+            </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white">Filter</button>
+    </form>
+
+    <!-- Section Filter -->
+    {% if sections %}
+    <form method="GET" action="/instructor/roster" class="flex gap-4 mb-6">
+        <input type="hidden" name="term" value="{{ selected_term }}">
         <select name="course_id" class="glass-input rounded-lg px-3 py-2 flex-1">
             <option value="">-- Select Section --</option>
             {% for section in sections %}
             <option value="{{ section['course_id'] }}"
-                data-sec="{{ section['sec_id'] }}"
                 {% if section['course_id'] == selected_course %}selected{% endif %}>
                 {{ section['course_id'] }} — {{ section['title'] }}
             </option>
             {% endfor %}
         </select>
-        <input type="hidden" name="sec_id" value="{{ selected_sec or (sections[0]['sec_id'] if sections else '') }}">
+        <input type="hidden" name="sec_id" value="{{ sections[0]['sec_id'] }}">
         <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white">Load Roster</button>
     </form>
+    {% endif %}
 
     <!-- Roster Table -->
     {% if roster %}
@@ -36,8 +51,8 @@
                     <th>ID</th>
                     <th>First Name</th>
                     <th>Last Name</th>
-                    <th>Current Grade</th>
-                    <th>Submit Grade</th>
+                    <th>Grade</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -48,21 +63,19 @@
                     <td>{{ student['last_name'] }}</td>
                     <td>{{ student['grade'] or '—' }}</td>
                     <td>
-                        <form method="POST" action="/instructor/grades" class="flex gap-2">
+                        {% if student['grade'] %}
+                        <span class="text-sm" style="color: rgba(255,255,255,0.3);">Graded</span>
+                        {% else %}
+                        <form method="POST" action="/instructor/roster">
                             <input type="hidden" name="student_id" value="{{ student['ID'] }}">
                             <input type="hidden" name="course_id" value="{{ selected_course }}">
                             <input type="hidden" name="sec_id" value="{{ selected_sec }}">
-                            <input type="hidden" name="semester" value="{{ prev_semester }}">
-                            <input type="hidden" name="year" value="{{ prev_year }}">
-                            <select name="grade" class="glass-input rounded px-2 py-1 text-sm">
-                                {% for g in grades %}
-                                <option value="{{ g }}" {% if g == student['grade'] %}selected{% endif %}>{{ g }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="text-sm {% if student['grade'] %}text-yellow-300 hover:text-yellow-100{% else %}text-blue-300 hover:text-blue-100{% endif %}">
-                                {% if student['grade'] %}Modify{% else %}Submit{% endif %}
-                            </button>
+                            <input type="hidden" name="semester" value="{{ selected_semester }}">
+                            <input type="hidden" name="year" value="{{ selected_year }}">
+                            <input type="hidden" name="term" value="{{ selected_term }}">
+                            <button type="submit" class="text-red-300 hover:text-red-100 text-sm">Drop</button>
                         </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -75,7 +88,7 @@
     </div>
     {% else %}
     <div class="glass-card rounded-2xl p-8 text-white">
-        <p>Select a section above to load the roster.</p>
+        <p>Select a term and section above to load the roster.</p>
     </div>
     {% endif %}
 </div>

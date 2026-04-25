@@ -1,0 +1,62 @@
+{% extends 'layout.html' %}
+{% block title %}Prerequisites{% endblock %}
+{% block nav_title %}INSTRUCTOR PORTAL{% endblock %}
+
+{% block content %}
+<div class="px-8 py-10">
+    <a href="/instructor" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
+    <h2 class="text-3xl font-bold text-white mt-4">Course Prerequisites</h2>
+    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">manage prerequisites for your courses</p>
+</div>
+
+<div class="max-w-5xl mx-auto px-8 pb-12 flex flex-col gap-6">
+    {% if my_courses %}
+        {% for course in my_courses %}
+        <div class="glass-card rounded-2xl p-6 text-white">
+            <h3 class="text-lg font-bold mb-1">{{ course['course_id'] }} — {{ course['title'] }}</h3>
+
+            <!-- Current Prereqs -->
+            <p class="text-sm opacity-60 mb-3">Current Prerequisites</p>
+            {% if prereqs_map[course['course_id']] %}
+            <div class="flex flex-col gap-2 mb-4">
+                {% for prereq in prereqs_map[course['course_id']] %}
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">{{ prereq['prereq_id'] }} — {{ prereq['title'] }}</span>
+                    <form method="POST" action="/instructor/prereqs">
+                        <input type="hidden" name="action" value="remove">
+                        <input type="hidden" name="course_id" value="{{ course['course_id'] }}">
+                        <input type="hidden" name="prereq_id" value="{{ prereq['prereq_id'] }}">
+                        <button type="submit" class="text-red-300 hover:text-red-100 text-sm">Remove</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm opacity-40 mb-4">No prerequisites set.</p>
+            {% endif %}
+
+            <!-- Add Prereq -->
+            <form method="POST" action="/instructor/prereqs" class="flex gap-4">
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="course_id" value="{{ course['course_id'] }}">
+                <select name="prereq_id" class="glass-input rounded-lg px-3 py-2 flex-1 text-sm">
+                    <option value="">-- Add Prerequisite --</option>
+                    {% for c in all_courses %}
+                    {% if c['course_id'] != course['course_id'] 
+                        and c['course_id'].split('-')[1] | int < course['course_id'].split('-')[1] | int
+                        and c['course_id'] not in prereqs_map[course['course_id']] | map(attribute='prereq_id') | list %}
+                    <option value="{{ c['course_id'] }}">{{ c['course_id'] }} — {{ c['title'] }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white text-sm">Add</button>
+            </form>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="glass-card rounded-2xl p-8 text-white">
+        <p>You have no courses assigned.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
