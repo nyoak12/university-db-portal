@@ -177,6 +177,34 @@ def roster():
                            selected_semester=selected_semester,
                            selected_year=selected_year)
 
+@instructor.route('/instructor/advisees', methods=['GET', 'POST'])
+def advisees():
+    if instructor_required():
+        return redirect('/login')
+
+    db = config.get_db()
+    cursor = db.cursor()
+
+    if request.method == 'POST':
+        f = request.form
+        if f['action'] == 'assign':
+            cursor.callproc('assign_advisor', [f['student_id'], session['user_id']])
+        elif f['action'] == 'drop':
+            cursor.callproc('drop_advisee', [f['student_id']])
+        db.commit()
+        cursor.close(); db.close()
+        return redirect('/instructor/advisees')
+
+    cursor.callproc('get_advisees', [session['user_id']])
+    advisees = cursor.fetchall()
+
+    cursor.callproc('get_unadvised_students')
+    unadvised = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+    return render_template('instructor/advisees.html', advisees=advisees, unadvised=unadvised)
+
 @instructor.route('/instructor/prereqs', methods=['GET', 'POST'])
 def prereqs():
     if instructor_required():
