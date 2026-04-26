@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="font-size: 125%;">
 <head>
     <meta charset="utf-8">
     <title>{% block title %}KSU{% endblock %}</title>
@@ -64,12 +64,12 @@
     <div class="flex items-center gap-6">
         <a href="/{% if session.get('role') == 'admin' %}admin/admin_profile{% elif session.get('role') == 'instructor' %}instructor/profile{% else %}student/profile{% endif %}"
             class="hover:opacity-70">
-            <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: white;">
+            <div style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; color: white;">
                 {{ session.get('first_name', '?')[0] }}{{ session.get('last_name', '?')[0] }}
             </div>
         </a>
         <a href="/logout" title="Logout"
-            class="flex items-center text-base font-semibold hover:opacity-70"
+            class="flex items-center text-2xl font-semibold hover:opacity-70"
             style="color: rgba(255,255,255,0.8);">
             <i class="fas fa-sign-out-alt"></i>
         </a>

@@ -15,13 +15,13 @@
         <h3 class="text-lg text-white font-semibold mb-4">Assign Instructor to Section</h3>
         <form action="/admin/teaches/assign" method="POST" novalidate>
             <div class="flex gap-4 flex-wrap">
-                <select name="instructor_id" required class="glass-input rounded-lg px-4 py-2 w-56">
+                <select name="instructor_id" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Instructor --</option>
                     {% for instructor in instructors %}
                         <option value="{{ instructor['ID'] }}">{{ instructor['ID'] }} — {{ instructor['first_name'] }} {{ instructor['last_name'] }}</option>
                     {% endfor %}
                 </select>
-                <select name="course_id" id="assign_course" required class="glass-input rounded-lg px-4 py-2 w-40"
+                <select name="course_id" id="assign_course" required class="glass-input rounded-lg px-4 py-2 flex-1"
                     onchange="filterSections()">
                     <option value="" disabled selected>-- Course --</option>
                     {% set seen_courses = [] %}
@@ -32,13 +32,13 @@
                         {% endif %}
                     {% endfor %}
                 </select>
-                <select name="sec_id" id="assign_sec_id" required class="glass-input rounded-lg px-4 py-2 w-32">
+                <select name="sec_id" id="assign_sec_id" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Section --</option>
                 </select>
-                <select name="semester" id="assign_semester" required class="glass-input rounded-lg px-4 py-2 w-36">
+                <select name="semester" id="assign_semester" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Semester --</option>
                 </select>
-                <select name="year" id="assign_year" required class="glass-input rounded-lg px-4 py-2 w-28">
+                <select name="year" id="assign_year" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Year --</option>
                 </select>
                 <button type="submit"

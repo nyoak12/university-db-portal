@@ -16,8 +16,8 @@
         <form action="/admin/timeslots/create" method="POST" novalidate>
             <div class="flex gap-4">
                 <input type="text" name="time_slot_id" placeholder="ID (e.g. A)" required maxlength="4"
-                    class="glass-input rounded-lg px-4 py-2 w-32">
-                <select name="day" required class="glass-input rounded-lg px-4 py-2 w-40">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
+                <select name="day" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Select Day --</option>
                     <option value="M">Monday</option>
                     <option value="T">Tuesday</option>
@@ -27,9 +27,9 @@
                     <option value="S">Saturday</option>
                 </select>
                 <input type="time" name="start_time" required
-                    class="glass-input rounded-lg px-4 py-2 w-36">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
                 <input type="time" name="end_time" required
-                    class="glass-input rounded-lg px-4 py-2 w-36">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
                 <button type="submit"
                     class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
                     Add

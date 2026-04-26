@@ -12,7 +12,7 @@
 <div class="pb-12 flex flex-col gap-8">
 
     <!-- Section Selector -->
-    <form method="GET" action="/instructor/grades" class="flex gap-4 mb-6">
+    <form method="GET" action="/instructor/grades" class="flex gap-4 mb-6 max-w-md">
         <select name="course_id" class="glass-input rounded-lg px-3 py-2 flex-1">
             <option value="">-- Select Section --</option>
             {% for section in sections %}

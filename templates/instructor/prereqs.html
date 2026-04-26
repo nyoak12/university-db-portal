@@ -20,7 +20,7 @@
             {% if prereqs_map[course['course_id']] %}
             <div class="flex flex-col gap-2 mb-4">
                 {% for prereq in prereqs_map[course['course_id']] %}
-                <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
                     <span class="text-sm">{{ prereq['prereq_id'] }} — {{ prereq['title'] }}</span>
                     <form method="POST" action="/instructor/prereqs">
                         <input type="hidden" name="action" value="remove">
@@ -36,7 +36,7 @@
             {% endif %}
 
             <!-- Add Prereq -->
-            <form method="POST" action="/instructor/prereqs" class="flex gap-4">
+            <form method="POST" action="/instructor/prereqs" class="flex gap-4 max-w-md">
                 <input type="hidden" name="action" value="add">
                 <input type="hidden" name="course_id" value="{{ course['course_id'] }}">
                 <select name="prereq_id" class="glass-input rounded-lg px-3 py-2 flex-1 text-sm">

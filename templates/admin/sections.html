@@ -15,22 +15,22 @@
         <h3 class="text-lg text-white font-semibold mb-4">Add New Section</h3>
         <form action="/admin/sections/create" method="POST" novalidate>
             <div class="flex gap-4 flex-wrap">
-                <select name="course_id" required class="glass-input rounded-lg px-4 py-2 w-40">
+                <select name="course_id" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Course --</option>
                     {% for course in courses %}
                         <option value="{{ course['course_id'] }}">{{ course['course_id'] }}</option>
                     {% endfor %}
                 </select>
                 <input type="text" name="sec_id" placeholder="Section ID (e.g. 1)" required
-                    class="glass-input rounded-lg px-4 py-2 w-36">
-                <select name="semester" required class="glass-input rounded-lg px-4 py-2 w-36">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
+                <select name="semester" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Semester --</option>
                     <option value="Fall">Fall</option>
                     <option value="Spring">Spring</option>
                     <option value="Summer">Summer</option>
                 </select>
                 <input type="number" name="year" placeholder="Year" required min="2000" max="2099"
-                    class="glass-input rounded-lg px-4 py-2 w-28">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
                 <select name="building_id" id="create_building" class="glass-input rounded-lg px-4 py-2 w-40"
                     onchange="filterRooms('create_building', 'create_room')">
                     <option value="">-- Building --</option>
@@ -42,13 +42,13 @@
                         {% endif %}
                     {% endfor %}
                 </select>
-                <select name="room_number" id="create_room" class="glass-input rounded-lg px-4 py-2 w-28">
+                <select name="room_number" id="create_room" class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="">-- Room --</option>
                     {% for room in classrooms %}
                         <option value="{{ room['room_number'] }}" data-building="{{ room['building_id'] }}" style="display:none">{{ room['room_number'] }}</option>
                     {% endfor %}
                 </select>
-                <select name="time_slot_id" class="glass-input rounded-lg px-4 py-2 w-36">
+                <select name="time_slot_id" class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="">-- Time Slot --</option>
                     {% set seen_slots = [] %}
                     {% for slot in timeslots %}
