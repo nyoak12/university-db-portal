@@ -3,33 +3,21 @@
 {% block nav_title %}KSU ADMIN{% endblock %}
 
 {% block content %}
-<div class="px-8 py-10">
+<div class="py-10">
     <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
-    <h2 class="text-3xl font-bold text-white mt-4">Time Slots</h2>
-    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">All class time slots</p>
+    <h2 class="text-4xl font-bold text-white mt-4">Time Slots</h2>
+    <p class="mt-1 text-base" style="color: rgba(255,255,255,0.5);">All class time slots</p>
 </div>
 
-<div class="max-w-5xl mx-auto px-8 pb-12">
-
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flex items-center gap-2 mb-4 text-red-400 text-sm">
-                    <span>⚠️ {{ message }}</span>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <!-- Create Form -->
+<div class="pb-12 flex flex-col gap-8">
+<!-- Create Form -->
     <div class="glass-card rounded-2xl p-6 mb-6">
-        <h3 class="text-white font-semibold mb-4">Add New Time Slot</h3>
+        <h3 class="text-lg text-white font-semibold mb-4">Add New Time Slot</h3>
         <form action="/admin/timeslots/create" method="POST" novalidate>
             <div class="flex gap-4">
                 <input type="text" name="time_slot_id" placeholder="ID (e.g. A)" required maxlength="4"
-                    class="glass-input rounded-lg px-4 py-2 w-32">
-                <select name="day" required class="glass-input rounded-lg px-4 py-2 w-40">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
+                <select name="day" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Select Day --</option>
                     <option value="M">Monday</option>
                     <option value="T">Tuesday</option>
@@ -39,9 +27,9 @@
                     <option value="S">Saturday</option>
                 </select>
                 <input type="time" name="start_time" required
-                    class="glass-input rounded-lg px-4 py-2 w-36">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
                 <input type="time" name="end_time" required
-                    class="glass-input rounded-lg px-4 py-2 w-36">
+                    class="glass-input rounded-lg px-4 py-2 flex-1">
                 <button type="submit"
                     class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
                     Add
@@ -69,7 +57,7 @@
                     <td>{{ slot['day'] }}</td>
                     <td>{{ slot['start_time'] }}</td>
                     <td>{{ slot['end_time'] }}</td>
-                    <td class="flex gap-2">
+                    <td style="white-space: nowrap;"><div class="flex gap-2 justify-center">
 
                         <!-- Update Form -->
                         <form action="/admin/timeslots/update" method="POST" class="flex gap-2">
@@ -97,6 +85,7 @@
                             </button>
                         </form>
 
+                    </div>
                     </td>
                 </tr>
                 {% endfor %}

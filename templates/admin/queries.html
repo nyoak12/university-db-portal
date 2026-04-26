@@ -3,186 +3,87 @@
 {% block nav_title %}KSU ADMIN{% endblock %}
 
 {% block content %}
-<div class="px-8 py-10">
+<div class="py-10">
     <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
-    <h2 class="text-3xl font-bold text-white mt-4">Analytics & Queries</h2>
+    <h2 class="text-4xl font-bold text-white mt-4">Analytics & Queries</h2>
     <p class="text-white opacity-50 mt-1">University performance data</p>
 </div>
 
-<div class="max-w-6xl mx-auto px-8 pb-12 flex flex-col gap-8">
+<div class="pb-12 flex flex-col gap-8">
 
-    <!-- Query 1: Average Grade by Department -->
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-white font-semibold text-lg mb-4">Average Grade by Department</h3>
-        <div class="overflow-x-auto">
-            <table class="glass-table">
-                <thead>
-                    <tr>
-                        <th>Department</th>
-                        <th>Avg GPA</th>
-                        <th>Total Students</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in avg_by_dept %}
-                    <tr>
-                        <td>{{ row['dept_name'] }}</td>
-                        <td>{{ row['avg_gpa'] }}</td>
-                        <td>{{ row['total_students'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Top row: three charts side by side -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-white font-semibold text-lg mb-4">Average GPA by Department</h3>
+            <img src="data:image/png;base64,{{ chart_avg }}" class="w-full rounded-lg">
+        </div>
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-white font-semibold text-lg mb-4">Total Students by Department</h3>
+            <img src="data:image/png;base64,{{ chart_total }}" class="w-full rounded-lg">
+        </div>
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-white font-semibold text-lg mb-4">Currently Enrolled by Department</h3>
+            <img src="data:image/png;base64,{{ chart_enrolled }}" class="w-full rounded-lg">
         </div>
     </div>
 
-    <!-- Query 2: Average Grade of a Class Across Semesters -->
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-white font-semibold text-lg mb-4">Average Grade of a Class Across Semesters</h3>
-        <form action="/admin/queries/class_range" method="POST" class="flex gap-4 flex-wrap mb-6">
-            <select name="course_id" required class="glass-input rounded-lg px-4 py-2 w-40">
-                <option value="" disabled selected>-- Course --</option>
-                {% for course in courses %}
-                    <option value="{{ course['course_id'] }}">{{ course['course_id'] }}</option>
-                {% endfor %}
-            </select>
-            <input type="number" name="start_year" placeholder="Start Year" required min="2000" max="2099"
-                class="glass-input rounded-lg px-4 py-2 w-32">
-            <input type="number" name="end_year" placeholder="End Year" required min="2000" max="2099"
-                class="glass-input rounded-lg px-4 py-2 w-32">
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
-                Run
-            </button>
-        </form>
-        {% if class_range_results is defined and class_range_results %}
-        <div class="overflow-x-auto">
-            <table class="glass-table">
-                <thead>
-                    <tr>
-                        <th>Course ID</th>
-                        <th>Title</th>
-                        <th>Semester</th>
-                        <th>Year</th>
-                        <th>Avg GPA</th>
-                        <th>Students</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in class_range_results %}
-                    <tr>
-                        <td>{{ row['course_id'] }}</td>
-                        <td>{{ row['title'] }}</td>
-                        <td>{{ row['semester'] }}</td>
-                        <td>{{ row['year'] }}</td>
-                        <td>{{ row['avg_gpa'] }}</td>
-                        <td>{{ row['total_students'] }}</td>
-                    </tr>
+    <!-- Interactive queries side by side -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-white font-semibold text-lg mb-4">Average Grade of a Class Across Semesters</h3>
+            <form action="/admin/queries" method="GET" class="flex gap-4 flex-wrap mb-6">
+                <input type="hidden" name="term" value="{{ request.args.get('term', '') }}">
+                <select name="course_id" required class="glass-input rounded-lg px-4 py-2">
+                    <option value="" disabled selected>-- Course --</option>
+                    {% for course in courses %}
+                    <option value="{{ course['course_id'] }}" {% if course['course_id'] == request.args.get('course_id') %}selected{% endif %}>
+                        {{ course['course_id'] }}
+                    </option>
                     {% endfor %}
-                </tbody>
-            </table>
+                </select>
+                <select name="start_year" required class="glass-input rounded-lg px-4 py-2">
+                    <option value="" disabled selected>-- Start Year --</option>
+                    {% for y in graded_years %}
+                    <option value="{{ y['year'] }}" {% if y['year']|string == request.args.get('start_year') %}selected{% endif %}>
+                        {{ y['year'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="end_year" required class="glass-input rounded-lg px-4 py-2">
+                    <option value="" disabled selected>-- End Year --</option>
+                    {% for y in graded_years %}
+                    <option value="{{ y['year'] }}" {% if y['year']|string == request.args.get('end_year') %}selected{% endif %}>
+                        {{ y['year'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">Run</button>
+            </form>
+            {% if chart_range %}
+            <img src="data:image/png;base64,{{ chart_range }}" class="w-full rounded-lg">
+            {% endif %}
         </div>
-        {% elif class_range_results is defined and not class_range_results %}
-        <p class="text-white opacity-50 text-sm">No graded records found for that range.</p>
-        {% endif %}
-    </div>
 
-    <!-- Query 3: Best and Worst Performing Classes -->
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-white font-semibold text-lg mb-4">Best & Worst Performing Classes</h3>
-        <form action="/admin/queries/best_worst" method="POST" class="flex gap-4 flex-wrap mb-6">
-            <select name="semester" required class="glass-input rounded-lg px-4 py-2 w-36">
-                <option value="" disabled selected>-- Semester --</option>
-                <option value="Fall">Fall</option>
-                <option value="Spring">Spring</option>
-                <option value="Summer">Summer</option>
-            </select>
-            <input type="number" name="year" placeholder="Year" required min="2000" max="2099"
-                class="glass-input rounded-lg px-4 py-2 w-28">
-            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">
-                Run
-            </button>
-        </form>
-        {% if best_worst_results is defined and best_worst_results %}
-        <div class="overflow-x-auto">
-            <table class="glass-table">
-                <thead>
-                    <tr>
-                        <th>Course ID</th>
-                        <th>Title</th>
-                        <th>Avg GPA</th>
-                        <th>Students</th>
-                        <th>Rank</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in best_worst_results %}
-                    <tr>
-                        <td>{{ row['course_id'] }}</td>
-                        <td>{{ row['title'] }}</td>
-                        <td>{{ row['avg_gpa'] }}</td>
-                        <td>{{ row['total_students'] }}</td>
-                        <td>
-                            {% if loop.first %}
-                                <span class="text-green-400 font-semibold">Best</span>
-                            {% elif loop.last %}
-                                <span class="text-red-400 font-semibold">Worst</span>
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
-                    </tr>
+        <div class="glass-card rounded-2xl p-6">
+            <h3 class="text-white font-semibold text-lg mb-4">Best & Worst Performing Classes</h3>
+            <form action="/admin/queries" method="GET" class="flex gap-4 flex-wrap mb-6">
+                <input type="hidden" name="course_id" value="{{ request.args.get('course_id', '') }}">
+                <input type="hidden" name="start_year" value="{{ request.args.get('start_year', '') }}">
+                <input type="hidden" name="end_year" value="{{ request.args.get('end_year', '') }}">
+                <select name="term" required class="glass-input rounded-lg px-4 py-2">
+                    <option value="" disabled selected>-- Term --</option>
+                    {% for t in graded_terms %}
+                    <option value="{{ t['semester'] }}-{{ t['year'] }}"
+                        {% if t['semester'] ~ '-' ~ t['year'] == request.args.get('term') %}selected{% endif %}>
+                        {{ t['semester'] }} {{ t['year'] }}
+                    </option>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% elif best_worst_results is defined and not best_worst_results %}
-        <p class="text-white opacity-50 text-sm">No graded records found for that semester.</p>
-        {% endif %}
-    </div>
-
-    <!-- Query 4: Total Students by Department -->
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-white font-semibold text-lg mb-4">Total Students by Department (Past & Current)</h3>
-        <div class="overflow-x-auto">
-            <table class="glass-table">
-                <thead>
-                    <tr>
-                        <th>Department</th>
-                        <th>Total Students</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in total_by_dept %}
-                    <tr>
-                        <td>{{ row['dept_name'] }}</td>
-                        <td>{{ row['total_students'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Query 5: Currently Enrolled by Department -->
-    <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-white font-semibold text-lg mb-4">Currently Enrolled Students by Department</h3>
-        <div class="overflow-x-auto">
-            <table class="glass-table">
-                <thead>
-                    <tr>
-                        <th>Department</th>
-                        <th>Enrolled Students</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in enrolled_by_dept %}
-                    <tr>
-                        <td>{{ row['dept_name'] }}</td>
-                        <td>{{ row['enrolled_students'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                </select>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold">Run</button>
+            </form>
+            {% if chart_bw %}
+            <img src="data:image/png;base64,{{ chart_bw }}" class="w-full rounded-lg">
+            {% endif %}
         </div>
     </div>
 

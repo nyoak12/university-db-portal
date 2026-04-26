@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, session, request, flash
 import config
 import re
 from datetime import datetime
-
+from routes.plots import chart_avg_by_dept, chart_total_by_dept, chart_enrolled_by_dept, chart_class_range, chart_best_worst
 admin = Blueprint('admin', __name__)
 
 def admin_required():
@@ -798,15 +798,9 @@ def update_profile():
     db = config.get_db()
     cursor = db.cursor()
     try:
-        cursor.callproc('update_admin_profile', [
-            session['user_id'],
-            request.form['first_name'],
-            request.form['last_name'],
-            request.form['username'],
-            request.form['password']
-        ])
+        if request.form.get('password'):
+            cursor.callproc('change_password', [session['user_id'], request.form['password']])
         db.commit()
-        session['first_name'] = request.form['first_name']
     except Exception as e:
         db.rollback()
         flash(e.args[1] if len(e.args) > 1 else str(e), 'error')
@@ -816,53 +810,14 @@ def update_profile():
     return redirect('/admin/admin_profile')
 
 # ──────────────────Queries──────────────────────────────────────────────────────────────────────────────────────────
+
+
 @admin.route('/admin/queries')
 def queries():
     if admin_required():
         return redirect('/login')
+
     db = config.get_db()
-    cursor = db.cursor()
-
-    cursor.callproc('avg_grade_by_department')
-    avg_by_dept = cursor.fetchall()
-    cursor.close()
-
-    cursor = db.cursor()
-    cursor.callproc('total_students_by_department')
-    total_by_dept = cursor.fetchall()
-    cursor.close()
-
-    cursor = db.cursor()
-    cursor.callproc('currently_enrolled_by_department')
-    enrolled_by_dept = cursor.fetchall()
-    cursor.close()
-
-    cursor = db.cursor()
-    cursor.callproc('get_all_courses')
-    courses = cursor.fetchall()
-    cursor.close()
-
-    db.close()
-    return render_template('admin/queries.html',
-        avg_by_dept=avg_by_dept,
-        total_by_dept=total_by_dept,
-        enrolled_by_dept=enrolled_by_dept,
-        courses=courses
-    )
-
-@admin.route('/admin/queries/class_range', methods=['POST'])
-def query_class_range():
-    if admin_required():
-        return redirect('/login')
-    db = config.get_db()
-    cursor = db.cursor()
-    cursor.callproc('avg_grade_by_class_range', [
-        request.form['course_id'],
-        request.form['start_year'],
-        request.form['end_year']
-    ])
-    class_range_results = cursor.fetchall()
-    cursor.close()
 
     cursor = db.cursor()
     cursor.callproc('avg_grade_by_department')
@@ -884,53 +839,56 @@ def query_class_range():
     courses = cursor.fetchall()
     cursor.close()
 
+    cursor = db.cursor()
+    cursor.execute("SELECT DISTINCT year FROM takes WHERE grade IS NOT NULL ORDER BY year DESC")
+    graded_years = cursor.fetchall()
+    cursor.close()
+
+    cursor = db.cursor()
+    cursor.execute("SELECT DISTINCT semester, year FROM takes WHERE grade IS NOT NULL ORDER BY year DESC, FIELD(semester, 'Fall', 'Summer', 'Spring') DESC")
+    graded_terms = cursor.fetchall()
+    cursor.close()
+
+    # optional interactive queries via GET params
+    course_id = request.args.get('course_id')
+    start_year = request.args.get('start_year')
+    end_year = request.args.get('end_year')
+    term = request.args.get('term')
+    semester = None
+    year = None
+    if term:
+        parts = term.split('-')
+        semester = parts[0]
+        year = parts[1]
+
+    chart_range = None
+    chart_bw = None
+
+    if course_id and start_year and end_year:
+        cursor = db.cursor()
+        cursor.callproc('avg_grade_by_class_range', [course_id, start_year, end_year])
+        class_range_results = cursor.fetchall()
+        cursor.close()
+        if class_range_results:
+            chart_range = chart_class_range(class_range_results, course_id)
+
+    if semester and year:
+        cursor = db.cursor()
+        cursor.callproc('best_worst_classes', [semester, year])
+        best_worst_results = cursor.fetchall()
+        cursor.close()
+        if best_worst_results:
+            chart_bw = chart_best_worst(best_worst_results, semester, year)
+
     db.close()
+
     return render_template('admin/queries.html',
-        avg_by_dept=avg_by_dept,
-        total_by_dept=total_by_dept,
-        enrolled_by_dept=enrolled_by_dept,
+        chart_avg=chart_avg_by_dept(avg_by_dept),
+        chart_total=chart_total_by_dept(total_by_dept),
+        chart_enrolled=chart_enrolled_by_dept(enrolled_by_dept),
         courses=courses,
-        class_range_results=class_range_results
-    )
-
-@admin.route('/admin/queries/best_worst', methods=['POST'])
-def query_best_worst():
-    if admin_required():
-        return redirect('/login')
-    db = config.get_db()
-    cursor = db.cursor()
-    cursor.callproc('best_worst_classes', [
-        request.form['semester'],
-        request.form['year']
-    ])
-    best_worst_results = cursor.fetchall()
-    cursor.close()
-
-    cursor = db.cursor()
-    cursor.callproc('avg_grade_by_department')
-    avg_by_dept = cursor.fetchall()
-    cursor.close()
-
-    cursor = db.cursor()
-    cursor.callproc('total_students_by_department')
-    total_by_dept = cursor.fetchall()
-    cursor.close()
-
-    cursor = db.cursor()
-    cursor.callproc('currently_enrolled_by_department')
-    enrolled_by_dept = cursor.fetchall()
-    cursor.close()
-
-    cursor = db.cursor()
-    cursor.callproc('get_all_courses')
-    courses = cursor.fetchall()
-    cursor.close()
-
-    db.close()
-    return render_template('admin/queries.html',
-        avg_by_dept=avg_by_dept,
-        total_by_dept=total_by_dept,
-        enrolled_by_dept=enrolled_by_dept,
-        courses=courses,
-        best_worst_results=best_worst_results
+        graded_years=graded_years,
+        graded_terms=graded_terms,
+        chart_range=chart_range,
+        chart_bw=chart_bw
     )

@@ -3,36 +3,25 @@
 {% block nav_title %}KSU ADMIN{% endblock %}
 
 {% block content %}
-<div class="px-8 py-10">
+<div class="py-10">
     <a href="/admin" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
-    <h2 class="text-3xl font-bold text-white mt-4">Instructor Assignments</h2>
+    <h2 class="text-4xl font-bold text-white mt-4">Instructor Assignments</h2>
     <p class="text-white opacity-50 mt-1">Assign instructors to course sections</p>
 </div>
 
-<div class="max-w-6xl mx-auto px-8 pb-12">
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flex items-center gap-2 mb-4 text-red-400 text-sm">
-                    <span>⚠️ {{ message }}</span>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <!-- Assign Form -->
+<div class="pb-12 flex flex-col gap-8">
+<!-- Assign Form -->
     <div class="glass-card rounded-2xl p-6 mb-6">
-        <h3 class="text-white font-semibold mb-4">Assign Instructor to Section</h3>
+        <h3 class="text-lg text-white font-semibold mb-4">Assign Instructor to Section</h3>
         <form action="/admin/teaches/assign" method="POST" novalidate>
             <div class="flex gap-4 flex-wrap">
-                <select name="instructor_id" required class="glass-input rounded-lg px-4 py-2 w-56">
+                <select name="instructor_id" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Instructor --</option>
                     {% for instructor in instructors %}
                         <option value="{{ instructor['ID'] }}">{{ instructor['ID'] }} — {{ instructor['first_name'] }} {{ instructor['last_name'] }}</option>
                     {% endfor %}
                 </select>
-                <select name="course_id" id="assign_course" required class="glass-input rounded-lg px-4 py-2 w-40"
+                <select name="course_id" id="assign_course" required class="glass-input rounded-lg px-4 py-2 flex-1"
                     onchange="filterSections()">
                     <option value="" disabled selected>-- Course --</option>
                     {% set seen_courses = [] %}
@@ -43,13 +32,13 @@
                         {% endif %}
                     {% endfor %}
                 </select>
-                <select name="sec_id" id="assign_sec_id" required class="glass-input rounded-lg px-4 py-2 w-32">
+                <select name="sec_id" id="assign_sec_id" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Section --</option>
                 </select>
-                <select name="semester" id="assign_semester" required class="glass-input rounded-lg px-4 py-2 w-36">
+                <select name="semester" id="assign_semester" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Semester --</option>
                 </select>
-                <select name="year" id="assign_year" required class="glass-input rounded-lg px-4 py-2 w-28">
+                <select name="year" id="assign_year" required class="glass-input rounded-lg px-4 py-2 flex-1">
                     <option value="" disabled selected>-- Year --</option>
                 </select>
                 <button type="submit"

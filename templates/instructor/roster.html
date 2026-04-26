@@ -3,44 +3,44 @@
 {% block nav_title %}INSTRUCTOR PORTAL{% endblock %}
 
 {% block content %}
-<div class="px-8 py-10">
+<div class="py-10">
     <a href="/instructor" class="text-sm text-white opacity-50 hover:opacity-100 transition">← Back to Dashboard</a>
-    <h2 class="text-3xl font-bold text-white mt-4">Section Roster</h2>
-    <p class="mt-1 text-sm" style="color: rgba(255,255,255,0.5);">view and manage enrolled students by section</p>
+    <h2 class="text-4xl font-bold text-white mt-4">Section Roster</h2>
+    <p class="mt-1 text-base" style="color: rgba(255,255,255,0.5);">view and manage enrolled students by section</p>
 </div>
 
-<div class="max-w-5xl mx-auto px-8 pb-12">
+<div class="pb-12 flex flex-col gap-8">
 
-    <!-- Term Filter -->
-    <form method="GET" action="/instructor/roster" class="flex gap-4 mb-4">
-        <select name="term" class="glass-input rounded-lg px-3 py-2">
-            {% for term in terms %}
-            <option value="{{ term['semester'] }}-{{ term['year'] }}"
-                {% if term['semester'] ~ '-' ~ term['year'] == selected_term %}selected{% endif %}>
-                {{ term['semester'] }} {{ term['year'] }}
-            </option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white">Filter</button>
-    </form>
-
-    <!-- Section Filter -->
-    {% if sections %}
-    <form method="GET" action="/instructor/roster" class="flex gap-4 mb-6">
-        <input type="hidden" name="term" value="{{ selected_term }}">
-        <select name="course_id" class="glass-input rounded-lg px-3 py-2 flex-1">
-            <option value="">-- Select Section --</option>
-            {% for section in sections %}
-            <option value="{{ section['course_id'] }}"
-                {% if section['course_id'] == selected_course %}selected{% endif %}>
-                {{ section['course_id'] }} — {{ section['title'] }}
-            </option>
-            {% endfor %}
-        </select>
-        <input type="hidden" name="sec_id" value="{{ sections[0]['sec_id'] }}">
-        <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white">Load Roster</button>
-    </form>
-    {% endif %}
+    <!-- Term + Section Filter -->
+    <div class="flex gap-4 items-center flex-wrap max-w-2xl">
+        <form method="GET" action="/instructor/roster" class="flex gap-4">
+            <select name="term" class="glass-input rounded-lg px-3 py-2">
+                {% for term in terms %}
+                <option value="{{ term['semester'] }}-{{ term['year'] }}"
+                    {% if term['semester'] ~ '-' ~ term['year'] == selected_term %}selected{% endif %}>
+                    {{ term['semester'] }} {{ term['year'] }}
+                </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white">Filter</button>
+        </form>
+        {% if sections %}
+        <form method="GET" action="/instructor/roster" class="flex gap-4">
+            <input type="hidden" name="term" value="{{ selected_term }}">
+            <select name="course_id" class="glass-input rounded-lg px-3 py-2">
+                <option value="">-- Select Section --</option>
+                {% for section in sections %}
+                <option value="{{ section['course_id'] }}"
+                    {% if section['course_id'] == selected_course %}selected{% endif %}>
+                    {{ section['course_id'] }} — {{ section['title'] }}
+                </option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="sec_id" value="{{ sections[0]['sec_id'] }}">
+            <button type="submit" class="glass-card rounded-lg px-4 py-2 text-white">Load Roster</button>
+        </form>
+        {% endif %}
+    </div>
 
     <!-- Roster Table -->
     {% if roster %}
