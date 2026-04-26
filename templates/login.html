@@ -1,33 +1,34 @@
 {% extends 'layout.html' %}
 {% block title %}Login{% endblock %}
 
+{% block content_padding %}{% endblock %}
 {% block content %}
 <div class="min-h-screen flex items-center justify-center">
 
     <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15);"
-        class="rounded-2xl p-8 w-full max-w-sm shadow-xl">
+        class="rounded-2xl p-20 w-full max-w-xl shadow-xl">
 
-        <h1 class="text-2xl font-bold text-center text-white tracking-widest mb-2">KSU PORTAL</h1>
-        <p class="text-center text-sm mb-6" style="color: rgba(255,255,255,0.5);">Sign in to continue</p>
+        <h1 class="text-4xl font-bold text-center text-white tracking-widest mb-2">KSU PORTAL</h1>
+        <p class="text-center text-base mb-8" style="color: rgba(255,255,255,0.5);">Sign in to continue</p>
 
         {% if error %}
-            <p class="text-red-400 text-sm mb-4 text-center">{{ error }}</p>
+            <p class="text-red-400 text-base mb-4 text-center">{{ error }}</p>
         {% endif %}
 
         <form method="POST" action="/login">
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-1 text-white opacity-70">Username</label>
+            <div class="mb-5">
+                <label class="block text-base font-medium mb-2 text-white opacity-70">Username</label>
                 <input type="text" name="username" required
-                    class="glass-input w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-30 placeholder-white placeholder-opacity-30">
+                    class="glass-input w-full rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-30 placeholder-white placeholder-opacity-30">
             </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium mb-1 text-white opacity-70">Password</label>
+            <div class="mb-8">
+                <label class="block text-base font-medium mb-2 text-white opacity-70">Password</label>
                 <input type="password" name="password" required
-                    class="glass-input w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-30">
+                    class="glass-input w-full rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-30">
             </div>
             <button type="submit"
                 style="background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.6); backdrop-filter: blur(8px);"
-                class="w-full text-white py-2 rounded-lg text-sm font-semibold tracking-widest transition hover:bg-white hover:text-gray-900">
+                class="w-full text-white py-3 rounded-lg text-base font-semibold tracking-widest transition hover:bg-white hover:text-gray-900">
                 Login
             </button>
         </form>
