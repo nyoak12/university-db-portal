@@ -1,4 +1,4 @@
-# University Login Portal — DB Project Phase 2
+# KSU University Portal — DB Project Phase 2
 
 Flask web app for a university database system. Role-based access for admin, instructor, and student.
 
@@ -23,11 +23,11 @@ pip install -r requirements.txt
 ```
 
 ### 4. Load the database into MySQL
-Make sure MySQL is running, then from the VS Code terminal:
+Make sure MySQL is running, then from the terminal:
 ```bash
 mysql -u root < db.sql
 ```
-This creates the `ksu` schema, all tables, and all stored procedures.
+This creates the `ksu` schema, all 16 tables, stored procedures, and seed data.
 
 ### 5. Create config.py
 `config.py` is intentionally not in the repo (it contains your local DB credentials). Create it manually in `university-db-portal/`:
@@ -55,7 +55,7 @@ App runs at: http://localhost:4500
 
 ## Test Logins
 
-These accounts were inserted manually into the `ksu` database for testing. Passwords are stored as SHA-256 hashes — querying `SELECT * FROM login` will show the encrypted values, not plaintext.
+Passwords are stored as SHA-256 hashes in the `login` table.
 
 | Role       | Username        | Password       |
 |------------|-----------------|----------------|
@@ -63,121 +63,84 @@ These accounts were inserted manually into the `ksu` database for testing. Passw
 | Instructor | testinstructor  | instructor123  |
 | Student    | teststudent     | student123     |
 
-To insert a new user manually, follow this pattern (admin example):
+To insert a new user manually (admin example):
 ```sql
 USE ksu;
-
 INSERT INTO admin VALUES('A03', 'Test', 'Admin');
 INSERT INTO login VALUES('A03', 'testadmin', SHA2('password123', 256), 'admin');
 ```
-
-> Note: A stored procedure for user creation has not been written yet. Until then, use the pattern above.
 
 ---
 
 ## Folder Structure
 
-Routes are already defined for all pages below. Templates marked `[TODO]` still need to be created.
-
 ```
 university-db-portal/
 ├── app.py                  # registers all blueprints, runs the app
-├── config.py               # DB connection — NOT in repo, create your own (see setup step 5)
-├── db.sql                  # DDL: schema, tables, stored procedures
+├── config.py               # DB connection — NOT in repo, create manually (see setup step 5)
+├── db.sql                  # schema, tables, stored procedures, and seed data
+├── requirements.txt        # Python dependencies
 ├── routes/
 │   ├── __init__.py         # marks routes/ as a Python package
-│   ├── auth.py             # login, logout, index redirect
-│   ├── admin.py            # all /admin/* routes — TODO: wire up DB queries
-│   ├── instructor.py       # all /instructor/* routes — TODO: wire up DB queries
-│   └── student.py          # all /student/* routes — TODO: wire up DB queries
+│   ├── auth.py             # login, logout, session management
+│   ├── admin.py            # all /admin/* routes and CRUD logic
+│   ├── instructor.py       # all /instructor/* routes
+│   ├── student.py          # all /student/* routes
+│   └── plots.py            # Matplotlib chart generation for analytics
 └── templates/
-    ├── layout.html         # shared base: gradient bg, navbar, CSS classes
+    ├── layout.html         # shared base: gradient bg, navbar, flash messages, CSS classes
     ├── login.html          # login page
     ├── admin/
-    │   ├── dashboard.html  # admin dashboard cards
-    │   ├── students.html   # [TODO] list/CRUD students
-    │   ├── instructors.html# [TODO] list/CRUD instructors
-    │   ├── courses.html    # [TODO] list/CRUD courses
-    │   ├── sections.html   # [TODO] list/CRUD sections
-    │   ├── departments.html# [TODO] list/CRUD departments
-    │   ├── classrooms.html # [TODO] list/CRUD classrooms
-    │   └── timeslots.html  # [TODO] list/CRUD time slots
+    │   ├── dashboard.html  # admin dashboard
+    │   ├── students.html   # CRUD students
+    │   ├── instructors.html# CRUD instructors
+    │   ├── courses.html    # CRUD courses
+    │   ├── sections.html   # CRUD sections
+    │   ├── departments.html# CRUD departments
+    │   ├── classrooms.html # CRUD classrooms
+    │   ├── timeslots.html  # CRUD time slots
+    │   ├── teaches.html    # assign/remove instructors to sections
+    │   ├── queries.html    # analytics dashboard with charts
+    │   └── admin_profile.html # admin profile and password reset
     ├── instructor/
-    │   ├── dashboard.html  # instructor dashboard cards
-    │   ├── grades.html     # [TODO] submit grades
-    │   ├── sections.html   # [TODO] view my sections
-    │   ├── roster.html     # [TODO] view section roster
-    │   ├── advisees.html   # [TODO] view advisees
-    │   ├── prereqs.html    # [TODO] view course prerequisites
-    │   └── profile.html    # [TODO] instructor profile
+    │   ├── dashboard.html  # instructor dashboard
+    │   ├── grades.html     # submit and modify grades
+    │   ├── sections.html   # view assigned sections by term
+    │   ├── roster.html     # view section roster, drop students
+    │   ├── advisees.html   # manage advisees
+    │   ├── prereqs.html    # manage course prerequisites
+    │   └── profile.html    # instructor profile and password reset
     └── student/
-        ├── dashboard.html  # student dashboard cards
-        ├── register.html   # [TODO] register for classes
-        ├── drop.html       # [TODO] drop classes
-        ├── grades.html     # [TODO] view my grades
-        ├── schedule.html   # [TODO] view my schedule
-        ├── advisor.html    # [TODO] view my advisor
-        └── profile.html    # [TODO] student profile
+        ├── dashboard.html  # student dashboard
+        ├── register.html   # register for classes
+        ├── drop.html       # drop enrolled classes
+        ├── schedule.html   # view current schedule
+        ├── transcript.html # view grades and GPA
+        ├── advisor.html    # view advisor information
+        └── profile.html    # student profile, major change, password reset
 ```
 
 ---
 
-## Adding New Pages
+## Shared CSS Classes
 
-Each card on the dashboard links to a route. For every new page you need to:
+Defined in `layout.html` and available across all templates:
 
-**1. Add a route in the relevant routes file**
-
-Example — adding a students list page in `routes/admin.py`:
-```python
-@admin.route('/admin/students')
-def students():
-    if admin_required():
-        return redirect('/login')
-    db = config.get_db()
-    cursor = db.cursor()
-    cursor.callproc('get_all_students')   # stored procedure (see note below)
-    students = cursor.fetchall()
-    cursor.close()
-    db.close()
-    return render_template('admin/students.html', students=students)
-```
-
-**2. Create the HTML template in the matching folder**
-
-Example — `templates/admin/students.html`:
-```html
-{% extends 'layout.html' %}
-{% block title %}Students{% endblock %}
-{% block nav_title %}KSU ADMIN{% endblock %}
-
-{% block content %}
-<!-- your table/form content here -->
-{% endblock %}
-```
-
-**3. Reuse shared CSS classes from layout.html**
-
-| Class          | Use                              |
-|----------------|----------------------------------|
-| `glass-card`   | Dashboard cards, panels          |
-| `glass-input`  | Form inputs                      |
-| `glass-table`  | Data tables on list/CRUD pages       |
+| Class         | Use                              |
+|---------------|----------------------------------|
+| `glass-card`  | Dashboard cards, info panels     |
+| `glass-input` | Form inputs and dropdowns        |
+| `glass-table` | Data tables on list/CRUD pages   |
 
 ---
 
-## Stored Procedures Note
+## Tech Stack
 
-The routes that list all records (students, instructors, courses, etc.) will call a `SELECT *` stored procedure. You need to add one to `db.sql` for each entity before those routes will work. Below is the example procedure added for admin route for students card. Click on students in the admin console to preview what each card should return as boilerplate before adding CRUD operations and more.
-
-Example procedure added:
-```sql
-DELIMITER $$
-CREATE PROCEDURE get_all_students()
-BEGIN
-    SELECT * FROM student;
-END $$
-DELIMITER ;
-```
-
-Add similar procedures for: instructors, courses, sections, departments, classrooms, timeslots.
+| Layer            | Technology                        |
+|------------------|-----------------------------------|
+| Backend          | Python, Flask                     |
+| Database         | MySQL (16 tables, 46+ procedures) |
+| Templating       | Jinja2                            |
+| Styling          | Tailwind CSS                      |
+| Charts           | Matplotlib                        |
+| Authentication   | Flask Sessions + SHA-256 hashing  |
